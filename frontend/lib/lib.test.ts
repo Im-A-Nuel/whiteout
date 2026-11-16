@@ -125,3 +125,19 @@ describe("ux log and endings", () => {
     expect(endingLabel(analyze({ hazards: 4n, prizes: 0n, dirs: [3, 3], score: 0 }))).toBe("Lost in the storm");
   });
 });
+
+describe('leaderboard helpers', () => {
+  it('marks and finds the best run of a wallet', async () => {
+    const { markMine, bestOf } = await import('./leaderboard');
+    const rows = [
+      { runId: '1', player: '0xAbC', score: 3, steps: 20 },
+      { runId: '2', player: '0xdef', score: 5, steps: 24 },
+      { runId: '3', player: '0xabc', score: 3, steps: 14 },
+    ];
+    expect(markMine(rows, '0xABC').map((r) => r.mine)).toEqual([true, false, true]);
+    expect(markMine(rows, null).every((r) => !r.mine)).toBe(true);
+    expect(bestOf(rows, '0xabc')?.runId).toBe('3');
+    expect(bestOf(rows, '0x999')).toBeNull();
+    expect(bestOf(rows, null)).toBeNull();
+  });
+});

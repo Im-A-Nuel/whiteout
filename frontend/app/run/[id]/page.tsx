@@ -18,6 +18,8 @@ export default function RunPage({ params }: { params: Promise<{ id: string }> })
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<ViewMode>("split");
   const configured = contractConfigured();
+  const [hasEth, setHasEth] = useState(false);
+  useEffect(() => setHasEth(hasWallet()), []);
 
   // A finalized run is public data: anyone can replay it without a wallet.
   useEffect(() => {
@@ -98,10 +100,10 @@ export default function RunPage({ params }: { params: Promise<{ id: string }> })
     return (
       <Shell>
         <p>Connect the wallet that owns this run to keep playing.</p>
-        {!hasWallet() && <p className="sub">No browser wallet found. Install one to play on Sepolia.</p>}
+        {!hasEth && <p className="sub">No browser wallet found. Install one to play on Sepolia.</p>}
         {error && <p className="sub" role="alert" style={{ color: "#f0806f" }}>{error}</p>}
         <div className="row" style={{ gap: 6, flexWrap: "wrap" }}>
-          <button type="button" className="btn" disabled={!hasWallet()} onClick={() => void connect()}>Connect wallet</button>
+          <button type="button" className="btn" disabled={!hasEth} onClick={() => void connect()}>Connect wallet</button>
           <Link href="/" className="btn alt">Back to start</Link>
         </div>
       </Shell>

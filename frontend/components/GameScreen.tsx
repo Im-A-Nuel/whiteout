@@ -121,7 +121,7 @@ export function DPad({ onMove, disabled, pos }: { onMove: (d: number) => void; d
 }
 
 export function GameScreen({ driver, address, resume }: { driver: Driver; address?: string; resume?: boolean }) {
-  const { state: s, move, finish, toggleMark, dismissError, retryError, retry } = useGame(driver, resume);
+  const { state: s, move, finish, toggleMark, clearMarks, dismissError, retryError, retry } = useGame(driver, resume);
   const [view, setView] = useState<ViewMode>("split");
   const [confirming, setConfirming] = useState(false);
   const [sound, setSoundState] = useState(false);
@@ -136,6 +136,9 @@ export function GameScreen({ driver, address, resume }: { driver: Driver; addres
   const playing = s.phase === "playing";
   const out = s.moves >= MAX_MOVES;
   const dead = !s.alive;
+  // the run is decided or over: nudge toward Finish
+  const distHome = row(s.pos) + col(s.pos);
+  const attn = playing && (dead || out || (s.pos !== 0 && MAX_MOVES - s.moves < distHome));
 
   const key = useCallback(
     (e: KeyboardEvent) => {
@@ -359,16 +362,30 @@ export function GameScreen({ driver, address, resume }: { driver: Driver; addres
                   {busyFinish ? (
                     <button type="button" className="btn" disabled>{s.phase === "finishing" ? "Opening the map..." : "Checking the proof..."}</button>
                   ) : (
-                    <button type="button" className="btn" disabled={!playing} onClick={() => setConfirming(true)}>Finish run</button>
+                    <button type="button" className={`btn${attn ? " attn" : ""}`} disabled={!playing} onClick={() => setConfirming(true)}>Finish run</button>
                   )}
                 </div>
               </div>
             )}
             <div className="sub" role="status" aria-live="polite" style={{ marginTop: 10, minHeight: 20, color: "var(--amber)" }}>
-              {s.decrypting ? (s.queued ? "Decrypting... one step is queued." : "Decrypting...") : ""}
+              {s.decrypting ? (s.queued ? `Decrypting... ${s.queued} ${s.queued === 1 ? "step" : "steps"} queued.` : "Decrypting...") : ""}
             </div>
-            <div className="sub" style={{ marginTop: 4 }}>
-              Arrow keys or WASD to move. Click a dark tile to mark a suspected pit. Enter to finish.
+            <div className="sub" style={{ marginTop: 4 }}>Arrow keys or WASD to move. Swipe the board on a phone. Enter to finish.</div>
+            <div className="row marks-legend" role="group" aria-label="Notes legend">
+              <span className="sub">Click a dark tile to cycle a private note:</span>
+              <span className="row" style={{ alignItems: "center", gap: 6 }}>
+                <Icon name="flagOver" size={20} />
+                <span className="sub">suspected pit</span>
+              </span>
+              <span className="row" style={{ alignItems: "center", gap: 6 }}>
+                <Icon name="qOver" size={20} />
+                <span className="sub">not sure</span>
+              </span>
+              {Object.keys(s.marks).length > 0 && (
+                <button type="button" className="btn sm alt" onClick={clearMarks}>
+                  Clear {Object.keys(s.marks).length} {Object.keys(s.marks).length === 1 ? "note" : "notes"}
+                </button>
+              )}
             </div>
           </div>
         )}

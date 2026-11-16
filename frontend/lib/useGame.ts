@@ -29,8 +29,8 @@ export interface GameState {
   announce: string;
   /** Last relic pickup, for the sparkle burst. Not persisted. */
   pickup: { cell: number; id: number } | null;
-  /** One input is waiting for the current step to finish. */
-  queued: boolean;
+  /** Inputs waiting for the current step to finish, at most MAX_QUEUE. */
+  queued: number;
   /** What failed last, so Retry can repeat it. */
   failedDir: number | null;
   errorKind: "step" | "finish" | null;
@@ -55,7 +55,7 @@ const initial: GameState = {
   error: null,
   announce: "",
   pickup: null,
-  queued: false,
+  queued: 0,
   failedDir: null,
   errorKind: null,
 };
@@ -69,6 +69,8 @@ export function predict(pos: number, dir: number): number {
   if (dir === 2) return c > 0 ? pos - 1 : pos;
   return c < 7 ? pos + 1 : pos;
 }
+
+export const MAX_QUEUE = 3;
 
 const storeKey = (id: string) => `whiteout:run:${id}`;
 
@@ -95,7 +97,7 @@ export function useGame(driver: Driver, resume?: boolean) {
   const [s, setS] = useState<GameState>(initial);
   const stateRef = useRef(s);
   const busy = useRef(false);
-  const queued = useRef<number | null>(null);
+  const queued = useRef<number[]>([]);
   const persist = driver.mode === "chain";
 
   const update = useCallback(
@@ -199,13 +201,16 @@ export function useGame(driver: Driver, resume?: boolean) {
           error: describe(e),
           errorKind: "step",
           failedDir: dir,
+          queued: 0,
         }));
+        queued.current = [];
       } finally {
         busy.current = false;
-        const next = queued.current;
-        queued.current = null;
-        if (next !== null) update((p) => ({ ...p, queued: false }));
-        if (next !== null) void run(next);
+        const next = queued.current.shift();
+        if (next !== undefined) {
+          update((p) => ({ ...p, queued: queued.current.length }));
+          void run(next);
+        }
       }
     },
     [driver, update],
@@ -214,8 +219,10 @@ export function useGame(driver: Driver, resume?: boolean) {
   const move = useCallback(
     (dir: number) => {
       if (busy.current) {
-        queued.current = dir; // one pending input
-        update((p) => ({ ...p, queued: true }));
+        if (queued.current.length < MAX_QUEUE) {
+          queued.current.push(dir);
+          update((p) => ({ ...p, queued: queued.current.length }));
+        }
         return;
       }
       void run(dir);
@@ -246,6 +253,8 @@ export function useGame(driver: Driver, resume?: boolean) {
     [update],
   );
 
+  const clearMarks = useCallback(() => update((p) => ({ ...p, marks: {} })), [update]);
+
   const dismissError = useCallback(() => update((p) => ({ ...p, error: null, errorKind: null, failedDir: null })), [update]);
 
   /** Repeats whatever failed: the same step, or the finish. */
@@ -258,7 +267,7 @@ export function useGame(driver: Driver, resume?: boolean) {
     else if (kind === "finish") void finish();
   }, [update, run, finish]);
 
-  return { state: s, move, finish, toggleMark, dismissError, retryError, retry: begin };
+  return { state: s, move, finish, toggleMark, clearMarks, dismissError, retryError, retry: begin };
 }
 
 function describe(e: unknown): string {

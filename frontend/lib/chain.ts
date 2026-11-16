@@ -21,6 +21,8 @@ export interface Wallet {
   chainId: number;
   signer: JsonRpcSigner;
   provider: BrowserProvider;
+  /** Native balance in wei, null if it could not be read. */
+  balance: bigint | null;
 }
 
 export async function connectWallet(): Promise<Wallet> {
@@ -29,7 +31,14 @@ export async function connectWallet(): Promise<Wallet> {
   await provider.send("eth_requestAccounts", []);
   const signer = await provider.getSigner();
   const network = await provider.getNetwork();
-  return { address: await signer.getAddress(), chainId: Number(network.chainId), signer, provider };
+  const address = await signer.getAddress();
+  let balance: bigint | null = null;
+  try {
+    balance = await provider.getBalance(address);
+  } catch {
+    balance = null;
+  }
+  return { address, chainId: Number(network.chainId), signer, provider, balance };
 }
 
 export async function switchToSepolia(): Promise<void> {
@@ -220,3 +229,6 @@ export async function fetchRevealed(runId: string): Promise<Reveal | null> {
     hazardsHandle: h.hazards,
   };
 }
+
+/** A full run is up to 27 transactions: start, 24 steps, finish, finalize. Below this the wallet may run dry. */
+export const LOW_GAS_WEI = 50_000_000_000_000_000n; // 0.05 ETH
