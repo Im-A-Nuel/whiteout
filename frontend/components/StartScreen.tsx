@@ -44,7 +44,7 @@ export function StartScreen() {
   const ready = contractConfigured();
 
   return (
-    <div className="root" style={{ minHeight: 780 }}>
+    <div className="root">
       <Scene />
       <div className="snow snowA" />
       <div className="snow snowB" />

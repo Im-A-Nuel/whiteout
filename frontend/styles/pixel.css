@@ -34,6 +34,7 @@ body { color: var(--text); font-family: var(--font-pixel), "Silkscreen", ui-mono
   position: relative;
   overflow: hidden;
   min-height: 100vh;
+  min-height: 100dvh;
   /* three hard bands, no smooth gradient */
   background: linear-gradient(var(--bg-0) 0 30%, var(--bg-1) 30% 62%, var(--bg-2) 62% 100%);
 }
