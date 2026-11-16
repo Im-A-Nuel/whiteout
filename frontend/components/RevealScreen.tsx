@@ -142,6 +142,7 @@ export function RevealScreen({
             pos={pos}
             dir={idx > 0 ? reveal.dirs[idx - 1] : null}
             taken={taken}
+            liftFog
             reveal={{ pits: a.pits, missed: stillThere, cairn: dead ? pos : null, hideSprite: dead }}
           />
           <div className="row legend">

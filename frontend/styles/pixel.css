@@ -247,3 +247,31 @@ body { color: var(--text); font-family: var(--font-pixel), "Silkscreen", ui-mono
 @media (prefers-reduced-motion: reduce) {
   .root *, .root *::before, .root *::after { animation: none !important; transition: none !important; }
 }
+
+/* ------------------------------------------------------- v2: events and sound */
+.pil.up .spr { background-image: url(/sprites/pilUpSheet.png); }
+.cairn { background: url(/sprites/cairn.png) center / 100% 100% no-repeat; image-rendering: pixelated; }
+
+/* relic pickup: six sparks fly out of the cell in stepped motion */
+.burst { position: absolute; width: calc(var(--s) * 16); height: calc(var(--s) * 16); z-index: 7; pointer-events: none; }
+.burst i { position: absolute; left: calc(var(--s) * 7); top: calc(var(--s) * 7); width: calc(var(--s) * 2); height: calc(var(--s) * 2); background: #ffe9a8; box-shadow: 0 0 0 calc(var(--s) * 0.5) #b8862b; animation: fly 0.7s steps(7) forwards; }
+.burst i:nth-child(1) { --dx: -9; --dy: -9; }
+.burst i:nth-child(2) { --dx: 0; --dy: -12; }
+.burst i:nth-child(3) { --dx: 9; --dy: -9; }
+.burst i:nth-child(4) { --dx: -10; --dy: 5; }
+.burst i:nth-child(5) { --dx: 0; --dy: 11; }
+.burst i:nth-child(6) { --dx: 10; --dy: 5; }
+@keyframes fly { from { transform: translate(0, 0); opacity: 1; } 85% { opacity: 1; } to { transform: translate(calc(var(--s) * var(--dx)), calc(var(--s) * var(--dy))); opacity: 0; } }
+
+/* chapter card over the board when the pilgrim enters a new region */
+.chapter-card { position: absolute; left: 50%; top: 16%; transform: translateX(-50%); z-index: 12; min-width: 56%; text-align: center; padding: 12px 18px; background: #3a2a12; box-shadow: 0 -4px 0 0 #b8862b, 0 4px 0 0 #b8862b, -4px 0 0 0 #b8862b, 4px 0 0 0 #b8862b, 0 8px 0 0 var(--panel-drop); animation: cardIn 2.6s steps(1) forwards; pointer-events: none; }
+.chapter-card .k { font-size: 14px; color: #ffd98a; }
+.chapter-card .n { font-size: 24px; font-weight: 700; }
+@keyframes cardIn { 0% { opacity: 0; } 8% { opacity: 1; } 85% { opacity: 1; } 100% { opacity: 0; } }
+.boardwrap { position: relative; }
+
+/* the fog lifts when the map is revealed */
+.fogLift { animation: lift 1.6s steps(8) forwards !important; }
+@keyframes lift { from { opacity: 0.75; } to { opacity: 0; } }
+
+.sound-btn { min-width: 44px; }

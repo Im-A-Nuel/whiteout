@@ -27,6 +27,8 @@ export interface GameState {
   reveal: Reveal | null;
   error: string | null;
   announce: string;
+  /** Last relic pickup, for the sparkle burst. Not persisted. */
+  pickup: { cell: number; id: number } | null;
 }
 
 const initial: GameState = {
@@ -47,6 +49,7 @@ const initial: GameState = {
   reveal: null,
   error: null,
   announce: "",
+  pickup: null,
 };
 
 /** Predicts the next cell from public rules only. It knows nothing about pits. */
@@ -169,6 +172,7 @@ export function useGame(driver: Driver, resume?: boolean) {
             alive: res.alive,
             relics: res.collected,
             taken: tookRelic ? [...p.taken, res.pos] : p.taken,
+            pickup: tookRelic ? { cell: res.pos, id: p.moves } : p.pickup,
             log: [entry, ...p.log],
             txs: res.txHash ? [res.txHash, ...p.txs].slice(0, 12) : p.txs,
             announce: parts.filter(Boolean).join(" ") || "Quiet.",

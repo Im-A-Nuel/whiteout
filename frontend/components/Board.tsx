@@ -20,6 +20,10 @@ export interface BoardProps {
   /** Replay: path drawn up to here. */
   replay?: boolean;
   fogless?: boolean;
+  /** Sparkle burst at the cell where a relic was just taken. Change `id` to replay it. */
+  burst?: { cell: number; id: number } | null;
+  /** Reveal only: fade the fog out instead of dropping it at once. */
+  liftFog?: boolean;
 }
 
 const px = (n: number): string => `calc(var(--s) * ${n})`;
@@ -116,7 +120,7 @@ export function Board(p: BoardProps) {
         {reveal?.cairn != null && <div className="cairn" role="img" aria-label="Where the run ended" style={{ left: px(col(reveal.cairn) * 16), top: px(row(reveal.cairn) * 16) }} />}
         {!reveal?.hideSprite && (
           <Pilgrim
-            variant={pos === 0 && trail.length <= 1 ? "down" : horizontal ? "side" : "down"}
+            variant={pos === 0 && trail.length <= 1 ? "down" : dir === 0 ? "up" : horizontal ? "side" : "down"}
             flip={dir === 2}
             bob={trail.length <= 1}
             className="walk"
@@ -124,6 +128,17 @@ export function Board(p: BoardProps) {
           />
         )}
 
+        {p.burst && !reveal && (
+          <div key={p.burst.id} className="burst" aria-hidden="true" style={{ left: px(col(p.burst.cell) * 16), top: px(row(p.burst.cell) * 16) }}>
+            {[0, 1, 2, 3, 4, 5].map((i) => <i key={i} />)}
+          </div>
+        )}
+        {reveal && p.liftFog && (
+          <>
+            <div className="fogdrift fogA fogLift" />
+            <div className="fogdrift fogB fogLift" />
+          </>
+        )}
         {glint && !reveal && (
           <>
             <span className="spark" style={{ left: px(col(pos) * 16 - 4), top: px(row(pos) * 16 + 3) }} />

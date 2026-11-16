@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Driver } from "@/lib/driver";
 import { MAX_MOVES } from "@/lib/engine";
 import { useGame } from "@/lib/useGame";
+import { CHAPTERS } from "@/lib/journey";
+import { loadSoundPref, setSound, sfx } from "@/lib/sound";
 import { cellLabel } from "@/lib/zones";
 import { Board } from "./Board";
 import { ChainView, JourneyLog, JourneyRibbon, LanternPanel, PackPanel, SignalsPanel } from "./Hud";
@@ -21,6 +23,8 @@ export function Header({
   view,
   onView,
   chainOk = true,
+  sound,
+  onSound,
 }: {
   runId?: string;
   practice?: boolean;
@@ -29,6 +33,8 @@ export function Header({
   view?: ViewMode;
   onView?: (v: ViewMode) => void;
   chainOk?: boolean;
+  sound?: boolean;
+  onSound?: () => void;
 }) {
   return (
     <header className="row hdr">
@@ -70,6 +76,11 @@ export function Header({
           </span>
         )}
         {address && <span className="hash">{shortAddr(address)}</span>}
+        {onSound && (
+          <button type="button" className="btn sm alt sound-btn" aria-pressed={!!sound} aria-label={sound ? "Sound on" : "Sound off"} onClick={onSound}>
+            {sound ? "Sound on" : "Sound off"}
+          </button>
+        )}
         <Link href="/leaderboard" className="btn sm alt">Leaderboard</Link>
       </div>
     </header>
@@ -100,6 +111,9 @@ export function GameScreen({ driver, address, resume }: { driver: Driver; addres
   const { state: s, move, finish, toggleMark, dismissError, retry } = useGame(driver, resume);
   const [view, setView] = useState<ViewMode>("split");
   const [confirming, setConfirming] = useState(false);
+  const [sound, setSoundState] = useState(false);
+  const [card, setCard] = useState<{ ch: number; step: number } | null>(null);
+  const prev = useRef({ moves: 0, relics: 0, cold: false, alive: true, phase: "starting" as string });
   const practice = driver.mode === "practice";
   const playing = s.phase === "playing";
   const out = s.moves >= MAX_MOVES;
@@ -126,6 +140,32 @@ export function GameScreen({ driver, address, resume }: { driver: Driver; addres
     return () => window.removeEventListener("keydown", key);
   }, [key]);
 
+  useEffect(() => setSoundState(loadSoundPref()), []);
+  const toggleSound = () => {
+    const next = !sound;
+    setSound(next);
+    setSoundState(next);
+    if (next) sfx.step();
+  };
+
+  // sound and the chapter card follow decrypted state, never the hidden map
+  useEffect(() => {
+    const p = prev.current;
+    if (s.moves > p.moves) sfx.step();
+    if (s.relics > p.relics) sfx.relic();
+    if (s.confirmed?.cold && !p.cold && !s.decrypting) sfx.cold();
+    if (!s.alive && p.alive) sfx.fell();
+    if (s.phase === "revealed" && p.phase !== "revealed") sfx.finish();
+    const top = s.log[0];
+    if (top && top.chapter != null && s.moves > p.moves) setCard({ ch: top.chapter, step: top.step });
+    prev.current = { moves: s.moves, relics: s.relics, cold: !!s.confirmed?.cold && !s.decrypting, alive: s.alive, phase: s.phase };
+  }, [s.moves, s.relics, s.confirmed, s.decrypting, s.alive, s.phase, s.log]);
+  useEffect(() => {
+    if (!card) return;
+    const t = setTimeout(() => setCard(null), 2600);
+    return () => clearTimeout(t);
+  }, [card]);
+
   const you = useMemo(
     () => ({ cell: cellLabel(s.pos), alive: s.alive ? "Yes" : "No", pits: `${cellLabel(s.pos)} +` }),
     [s.pos, s.alive],
@@ -135,7 +175,7 @@ export function GameScreen({ driver, address, resume }: { driver: Driver; addres
     return (
       <div className="root" style={{ ["--s" as string]: "4px" }}>
         <div className="snow snowA" style={{ opacity: 0.55 }} />
-        <Header runId={s.runId} practice={practice} finalized={!practice} address={address} view={view} onView={setView} />
+        <Header runId={s.runId} practice={practice} finalized={!practice} address={address} view={view} onView={setView} sound={sound} onSound={toggleSound} />
         <RevealScreen
           reveal={s.reveal}
           runId={s.runId}
@@ -155,7 +195,7 @@ export function GameScreen({ driver, address, resume }: { driver: Driver; addres
     <div className="root">
       <div className="snow snowA" />
       <div className="snow snowB" />
-      <Header runId={s.runId || undefined} practice={practice} address={address} view={view} onView={setView} />
+      <Header runId={s.runId || undefined} practice={practice} address={address} view={view} onView={setView} sound={sound} onSound={toggleSound} />
       <div className="sr-only" aria-live="polite">{s.announce}</div>
 
       {s.phase === "starting" && (
@@ -189,7 +229,15 @@ export function GameScreen({ driver, address, resume }: { driver: Driver; addres
           <div className="col-c" style={view === "you" ? { width: "min(100%, 640px)" } : undefined}>
             <JourneyRibbon cells={s.cells} current={s.pos} />
             <Pennants />
+            <div className="boardwrap">
+            {card && (
+              <div className="chapter-card" role="status">
+                <div className="k">Chapter {card.ch + 1}, step {card.step}</div>
+                <div className="n">{CHAPTERS[card.ch].name}</div>
+              </div>
+            )}
             <Board
+              burst={s.pickup}
               trail={s.cells}
               pos={s.pos}
               dir={s.dir}
@@ -199,6 +247,7 @@ export function GameScreen({ driver, address, resume }: { driver: Driver; addres
               taken={s.taken}
               onCell={playing ? toggleMark : undefined}
             />
+            </div>
 
             {s.error && playing && (
               <div className="errbox" role="alert">

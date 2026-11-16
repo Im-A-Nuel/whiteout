@@ -37,7 +37,7 @@ export function Pilgrim({
   style,
   className = "",
 }: {
-  variant?: "down" | "side";
+  variant?: "down" | "side" | "up";
   flip?: boolean;
   bob?: boolean;
   still?: boolean;
