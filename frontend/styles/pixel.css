@@ -350,3 +350,10 @@ body { color: var(--text); font-family: var(--font-pixel), "Silkscreen", ui-mono
 
 .boardwrap { scroll-margin-top: 8px; }
 .steps-chip { justify-content: center; font-weight: 700; color: var(--amber); padding: 2px 0; }
+
+/* ux: fallen pilgrim, wall hints, low oil warning */
+.pil.fallen .spr { filter: grayscale(1) brightness(0.65); animation: none; }
+.pil.fallen { animation: none; }
+.key.wall { filter: brightness(0.72); }
+.key.wall img { opacity: 0.45; }
+.warnbox { margin-top: 16px; padding: 12px 14px; background: #3a2a12; box-shadow: inset 0 0 0 4px #b8862b; font-size: 15px; }

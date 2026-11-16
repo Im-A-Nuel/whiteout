@@ -24,6 +24,8 @@ export interface BoardProps {
   burst?: { cell: number; id: number } | null;
   /** Reveal only: fade the fog out instead of dropping it at once. */
   liftFog?: boolean;
+  /** The pilgrim fell on a pit. Only the player knows this before Finish. */
+  fallen?: boolean;
 }
 
 const px = (n: number): string => `calc(var(--s) * ${n})`;
@@ -123,7 +125,7 @@ export function Board(p: BoardProps) {
             variant={pos === 0 && trail.length <= 1 ? "down" : dir === 0 ? "up" : horizontal ? "side" : "down"}
             flip={dir === 2}
             bob={trail.length <= 1}
-            className="walk"
+            className={`walk${p.fallen ? " fallen" : ""}`}
             style={{ left: px(col(pos) * 16), top: px(row(pos) * 16) }}
           />
         )}

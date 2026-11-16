@@ -1,4 +1,4 @@
-import { ENDING_LABEL, type Analysis } from "./reveal";
+import { endingLabel, type Analysis } from "./reveal";
 import { cellLabel, col, decor, pitKey, row, tileKey } from "./zones";
 
 const W = 1200;
@@ -110,7 +110,7 @@ export async function renderCard(a: Analysis, info: CardInfo): Promise<Blob> {
   const unit = a.ending === "home" ? (info.score === 1 ? "relic carried home" : "relics carried home") : "final score";
   text(unit, 300, 322, 26, "#A9B6D6");
 
-  const label = ENDING_LABEL[a.ending];
+  const label = endingLabel(a);
   ctx.font = `700 30px ${family}`;
   const lw = ctx.measureText(label).width + 36;
   ctx.fillStyle = "#14102A";

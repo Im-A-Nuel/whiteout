@@ -4,10 +4,11 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Driver } from "@/lib/driver";
 import { MAX_MOVES } from "@/lib/engine";
+import { predict } from "@/lib/useGame";
 import { useGame } from "@/lib/useGame";
 import { CHAPTERS } from "@/lib/journey";
 import { loadSoundPref, setSound, sfx } from "@/lib/sound";
-import { cellLabel } from "@/lib/zones";
+import { cellLabel, col, row } from "@/lib/zones";
 import { Board } from "./Board";
 import { ChainView, JourneyLog, JourneyRibbon, LanternPanel, PackPanel, SignalsPanel } from "./Hud";
 import { Icon, Panel, Pennants, Pilgrim, shortAddr } from "./Pixel";
@@ -103,21 +104,24 @@ const ARROWS: { dir: number; rot: number; label: string }[] = [
   { dir: 3, rot: 90, label: "Move east" },
 ];
 
-export function DPad({ onMove, disabled }: { onMove: (d: number) => void; disabled?: boolean }) {
+export function DPad({ onMove, disabled, pos }: { onMove: (d: number) => void; disabled?: boolean; pos?: number }) {
   return (
     <div className="dpad" role="group" aria-label="Move">
-      {ARROWS.map((a) => (
-        <button key={a.dir} type="button" className={`btn alt key k${a.dir}`} aria-label={a.label} disabled={disabled} onClick={() => onMove(a.dir)}>
+      {ARROWS.map((a) => {
+        const wall = pos !== undefined && predict(pos, a.dir) === pos;
+        return (
+        <button key={a.dir} type="button" className={`btn alt key k${a.dir}${wall ? " wall" : ""}`} aria-label={wall ? `${a.label}, wall, the step would be wasted` : a.label} title={wall ? "Wall: the step would be wasted" : undefined} disabled={disabled} onClick={() => onMove(a.dir)}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/sprites/arrow.png" alt="" style={{ transform: `rotate(${a.rot}deg)` }} />
         </button>
-      ))}
+        );
+      })}
     </div>
   );
 }
 
 export function GameScreen({ driver, address, resume }: { driver: Driver; address?: string; resume?: boolean }) {
-  const { state: s, move, finish, toggleMark, dismissError, retry } = useGame(driver, resume);
+  const { state: s, move, finish, toggleMark, dismissError, retryError, retry } = useGame(driver, resume);
   const [view, setView] = useState<ViewMode>("split");
   const [confirming, setConfirming] = useState(false);
   const [sound, setSoundState] = useState(false);
@@ -158,6 +162,16 @@ export function GameScreen({ driver, address, resume }: { driver: Driver; addres
   }, [key]);
 
   useEffect(() => setSoundState(loadSoundPref()), []);
+
+  // a practice run lives only in this tab, so ask before it is lost
+  useEffect(() => {
+    if (!practice || s.phase !== "playing" || s.moves === 0) return;
+    const warn = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [practice, s.phase, s.moves]);
 
   // phones: bring the board into view once when the run starts, the lantern count lives in the dock
   useEffect(() => {
@@ -279,6 +293,7 @@ export function GameScreen({ driver, address, resume }: { driver: Driver; addres
             )}
             <Board
               burst={s.pickup}
+              fallen={dead}
               trail={s.cells}
               pos={s.pos}
               dir={s.dir}
@@ -292,16 +307,31 @@ export function GameScreen({ driver, address, resume }: { driver: Driver; addres
 
             {s.error && playing && (
               <div className="errbox" role="alert">
-                <div>That step did not go through. Your lantern is unchanged. Try again.</div>
+                <div>{s.errorKind === "finish" ? "The run did not finish. Nothing was lost, your steps are kept." : "That step did not go through. Your lantern is unchanged."}</div>
                 <div className="sub" style={{ marginTop: 4 }}>{s.error}</div>
-                <button type="button" className="btn sm" onClick={dismissError}>Retry</button>
+                <div className="row" style={{ gap: 4, flexWrap: "wrap" }}>
+                  <button type="button" className="btn sm" onClick={retryError}>{s.errorKind === "finish" ? "Retry finish" : "Retry step"}</button>
+                  <button type="button" className="btn sm alt" onClick={dismissError}>Dismiss</button>
+                </div>
               </div>
             )}
             {dead && playing && (
-              <div className="sub" style={{ marginTop: 14 }}>
-                You fell. Steps still count and nobody on the chain can tell. Finish to open the map.
+              <div className="errbox" role="status">
+                <b>You fell.</b> <span className="sub">Only you know. Steps still count and nobody on the chain can tell. Finish to open the map.</span>
               </div>
             )}
+            {playing && !dead && !out && s.pos !== 0 && (() => {
+              const left = MAX_MOVES - s.moves;
+              const dist = row(s.pos) + col(s.pos);
+              if (left > dist + 2) return null;
+              return (
+                <div className="warnbox" role="status">
+                  {left < dist
+                    ? `The gate is ${dist} steps away and you have ${left} steps of oil. You cannot get home in time, and finishing away from the gate scores zero.`
+                    : `The gate is ${dist} steps away and you have ${left} steps of oil. Head home now.`}
+                </div>
+              );
+            })()}
             {out && playing && <div className="sub" style={{ marginTop: 14 }}>The lantern is out. Finish the run to see the map.</div>}
 
             {confirming && playing ? (
@@ -319,7 +349,7 @@ export function GameScreen({ driver, address, resume }: { driver: Driver; addres
               </div>
             ) : (
               <div className="row dock" style={{ alignItems: "center", gap: 6, marginTop: 22, flexWrap: "wrap" }}>
-                <DPad onMove={move} disabled={!playing || out} />
+                <DPad onMove={move} disabled={!playing || out} pos={s.pos} />
                 <div style={{ flex: "1 1 0", minWidth: 12 }} />
                 <div className="dock-actions">
                   <span className="mobile-only steps-chip" role="status" aria-label={`${MAX_MOVES - s.moves} of ${MAX_MOVES} steps left`}>{MAX_MOVES - s.moves} steps left</span>

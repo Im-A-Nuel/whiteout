@@ -65,3 +65,9 @@ export const ENDING_LABEL: Record<Ending, string> = {
   oil: "Out of oil",
   lost: "Lost in the storm",
 };
+
+/** The stamp text. Finishing early away from the gate is not the same as running out of oil. */
+export function endingLabel(a: Analysis): string {
+  if (a.ending === "oil" && a.oilLeft > 0) return "Away from the gate";
+  return ENDING_LABEL[a.ending];
+}

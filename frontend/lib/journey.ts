@@ -36,12 +36,16 @@ export function logEntry(args: {
   tookRelic: boolean;
   chapter?: number;
   pushedBack?: boolean;
+  bumped?: boolean;
+  fell?: boolean;
 }): LogEntry {
-  const { step, dir, cold, glint, tookRelic, chapter, pushedBack } = args;
+  const { step, dir, cold, glint, tookRelic, chapter, pushedBack, bumped, fell } = args;
   const signals = cold && glint ? "Cold and Glint" : cold ? "Cold" : glint ? "Glint" : "Quiet";
-  const title = `${DIR_NAMES[dir & 3]}. ${tookRelic ? "Relic taken. " : ""}${signals}.`;
+  const title = `${DIR_NAMES[dir & 3]}. ${bumped ? "Wall. " : ""}${tookRelic ? "Relic taken. " : ""}${fell ? "You fell. " : ""}${signals}.`;
   let flavor: string;
   if (pushedBack) flavor = "The wind pushes you back.";
+  else if (fell) flavor = "The ground gives way. Nobody on the chain can tell.";
+  else if (bumped) flavor = "Cold stone. The step is spent.";
   else if (tookRelic) flavor = cold ? "You pocket it. The slabs feel thin here." : "Heavier. The lantern sways.";
   else if (cold && glint) flavor = "Frost on your sleeve, and gold close by.";
   else if (cold) flavor = "Your breath fogs. Something is below the stone.";

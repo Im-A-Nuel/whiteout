@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { Reveal } from "@/lib/driver";
-import { analyze, ENDING_LABEL } from "@/lib/reveal";
+import { analyze, endingLabel } from "@/lib/reveal";
 import { renderCard } from "@/lib/shareCard";
 import { cellLabel } from "@/lib/zones";
 import { Board } from "./Board";
@@ -102,7 +102,7 @@ export function RevealScreen({
   const pos = a.cells[idx];
   const visited = new Set(a.cells);
   const missed = a.prizes.filter((c) => !a.takenAt.some((t) => t.cell === c));
-  const stamp = ENDING_LABEL[a.ending];
+  const stamp = endingLabel(a);
   const onChain = !practice && !simulated && !!reveal.finalizeTx;
 
   const body =
@@ -110,7 +110,9 @@ export function RevealScreen({
       ? `Back at the gate with ${a.relics} ${a.relics === 1 ? "relic" : "relics"} and ${a.oilLeft} steps of oil left.`
       : a.ending === "lost"
         ? `You fell on a pit at ${cellLabel(a.cells[a.deathStep ?? 0])}. The score is zero.`
-        : `You finished away from the gate with ${a.relics} ${a.relics === 1 ? "relic" : "relics"}. The score is zero.`;
+        : a.oilLeft === 0
+          ? `The lantern went out before you reached the gate. You carried ${a.relics} ${a.relics === 1 ? "relic" : "relics"}, so the score is zero.`
+          : `You finished away from the gate with ${a.relics} ${a.relics === 1 ? "relic" : "relics"}. The score is zero.`;
 
   return (
     <main className="row main">

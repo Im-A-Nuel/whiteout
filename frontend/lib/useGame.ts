@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { Driver, Reveal, StepResult } from "./driver";
 import { MAX_MOVES } from "./engine";
 import { chapterOf, logEntry, type LogEntry } from "./journey";
-import { col, row } from "./zones";
+import { cellLabel, col, row } from "./zones";
 
 export type Phase = "starting" | "playing" | "finishing" | "finalizing" | "revealed" | "failed";
 export type Mark = 0 | 1 | 2; // none, pit flag, question mark
@@ -31,6 +31,9 @@ export interface GameState {
   pickup: { cell: number; id: number } | null;
   /** One input is waiting for the current step to finish. */
   queued: boolean;
+  /** What failed last, so Retry can repeat it. */
+  failedDir: number | null;
+  errorKind: "step" | "finish" | null;
 }
 
 const initial: GameState = {
@@ -53,6 +56,8 @@ const initial: GameState = {
   announce: "",
   pickup: null,
   queued: false,
+  failedDir: null,
+  errorKind: null,
 };
 
 /** Predicts the next cell from public rules only. It knows nothing about pits. */
@@ -155,6 +160,7 @@ export function useGame(driver: Driver, resume?: boolean) {
           const prevCh = new Set(p.cells.slice(0, -1).map(chapterOf));
           const ch = chapterOf(res.pos);
           const entering = !prevCh.has(ch);
+          const fell = p.alive && !res.alive;
           const entry = logEntry({
             step: p.moves,
             dir,
@@ -163,8 +169,9 @@ export function useGame(driver: Driver, resume?: boolean) {
             tookRelic,
             chapter: entering ? ch : undefined,
             pushedBack: mismatch && res.alive,
+            bumped: guess === from && !mismatch,
+            fell,
           });
-          const fell = p.alive && !res.alive;
           const parts = [res.cold ? "Cold." : "", res.glint ? "Glint." : "", entering ? "New chapter." : "", fell ? "You fell." : ""];
           return {
             ...p,
@@ -178,7 +185,7 @@ export function useGame(driver: Driver, resume?: boolean) {
             pickup: tookRelic ? { cell: res.pos, id: p.moves } : p.pickup,
             log: [entry, ...p.log],
             txs: res.txHash ? [res.txHash, ...p.txs].slice(0, 12) : p.txs,
-            announce: parts.filter(Boolean).join(" ") || "Quiet.",
+            announce: `${cellLabel(res.pos)}. ${guess === from && !mismatch ? "Wall. " : ""}${parts.filter(Boolean).join(" ") || "Quiet."}`,
           };
         });
       } catch (e) {
@@ -190,6 +197,8 @@ export function useGame(driver: Driver, resume?: boolean) {
           cells: p.cells.slice(0, -1),
           decrypting: false,
           error: describe(e),
+          errorKind: "step",
+          failedDir: dir,
         }));
       } finally {
         busy.current = false;
@@ -221,7 +230,7 @@ export function useGame(driver: Driver, resume?: boolean) {
       const reveal = await driver.finish((ph) => update((p) => ({ ...p, phase: ph })));
       update((p) => ({ ...p, phase: "revealed", reveal }));
     } catch (e) {
-      update((p) => ({ ...p, phase: "playing", error: describe(e) }));
+      update((p) => ({ ...p, phase: "playing", error: describe(e), errorKind: "finish" }));
     }
   }, [driver, update]);
 
@@ -237,9 +246,19 @@ export function useGame(driver: Driver, resume?: boolean) {
     [update],
   );
 
-  const dismissError = useCallback(() => update((p) => ({ ...p, error: null })), [update]);
+  const dismissError = useCallback(() => update((p) => ({ ...p, error: null, errorKind: null, failedDir: null })), [update]);
 
-  return { state: s, move, finish, toggleMark, dismissError, retry: begin };
+  /** Repeats whatever failed: the same step, or the finish. */
+  const retryError = useCallback(() => {
+    const cur = stateRef.current;
+    const kind = cur.errorKind;
+    const dir = cur.failedDir;
+    update((p) => ({ ...p, error: null, errorKind: null, failedDir: null }));
+    if (kind === "step" && dir !== null) void run(dir);
+    else if (kind === "finish") void finish();
+  }, [update, run, finish]);
+
+  return { state: s, move, finish, toggleMark, dismissError, retryError, retry: begin };
 }
 
 function describe(e: unknown): string {

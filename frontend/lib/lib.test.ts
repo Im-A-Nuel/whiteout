@@ -105,3 +105,23 @@ describe("journey log", () => {
     expect(logEntry({ step: 1, dir: 0, cold: false, glint: false, tookRelic: false }).flavor).toBe("Only the wind.");
   });
 });
+
+describe("ux log and endings", () => {
+  it("names a wall bump and a fall in the journey log", () => {
+    const wall = logEntry({ step: 1, dir: 0, cold: false, glint: false, tookRelic: false, bumped: true });
+    expect(wall.title).toBe("North. Wall. Quiet.");
+    expect(wall.flavor).toBe("Cold stone. The step is spent.");
+    const fall = logEntry({ step: 2, dir: 3, cold: true, glint: false, tookRelic: false, fell: true });
+    expect(fall.title).toBe("East. You fell. Cold.");
+    expect(fall.flavor).toContain("Nobody on the chain can tell");
+  });
+
+  it("separates finishing early from running out of oil", async () => {
+    const { analyze, endingLabel } = await import("./reveal");
+    const mk = (dirs: number[]) => analyze({ hazards: 0n, prizes: 0n, dirs, score: 0 });
+    expect(endingLabel(mk([3, 2]))).toBe("Home alive");
+    expect(endingLabel(mk([3]))).toBe("Away from the gate");
+    expect(endingLabel(mk(Array(24).fill(3)))).toBe("Out of oil");
+    expect(endingLabel(analyze({ hazards: 4n, prizes: 0n, dirs: [3, 3], score: 0 }))).toBe("Lost in the storm");
+  });
+});
