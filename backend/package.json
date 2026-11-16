@@ -1,0 +1,23 @@
+{
+  "name": "whiteout-backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Balance simulator and scripted Sepolia runs for Whiteout",
+  "scripts": {
+    "sim": "tsx src/sim/run.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "run:sepolia": "tsx scripts/run-sepolia.ts"
+  },
+  "dependencies": {
+    "@zama-fhe/relayer-sdk": "^0.4.1",
+    "ethers": "^6.16.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.30",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.0"
+  }
+}
