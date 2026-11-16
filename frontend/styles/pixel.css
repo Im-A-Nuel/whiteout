@@ -410,3 +410,47 @@ body { color: var(--text); font-family: var(--font-pixel), "Silkscreen", ui-mono
   .root.start .hero h1 { font-size: clamp(48px, 11vh, 96px); }
 }
 .root.start .hero p.sub { font-size: 14px; max-width: 64ch; }
+
+/* ---- landing v2: exact scene from the approved design, pilgrim on the cliff ---- */
+.scenebox { position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); width: max(100vw, calc(100dvh * 1.8462)); aspect-ratio: 360 / 195; --u: calc(max(100vw, 100dvh * 1.8462) / 360); pointer-events: none; z-index: 1; }
+.scenebox .svgbg { position: absolute; inset: 0; background: url(/scene.svg) center / 100% 100% no-repeat; image-rendering: pixelated; }
+.scenebox .pil.walker { position: absolute; left: calc(var(--u) * 276); top: calc(var(--u) * 137); right: auto; bottom: auto; --s: calc(var(--u) * 2); width: calc(var(--u) * 32); height: calc(var(--u) * 32); z-index: 3; }
+@media (max-aspect-ratio: 1 / 1) {
+  .scenebox { left: auto; right: -34vw; transform: none; width: 270vw; --u: calc(270vw / 360); }
+}
+.root.start .hero .tag { text-shadow: 3px 3px 0 #0a0c22; }
+.root.start .hero p:not(.tag) { text-shadow: 2px 2px 0 #0a0c22; color: #c7d3ee; }
+.root.start .three .panel { display: flex; align-items: center; gap: 14px; padding: 12px 18px; width: 300px; max-width: none; flex: none; flex-wrap: nowrap; }
+.link-btn { background: none; border: 0; padding: 0; margin: 0; font: inherit; color: var(--amber); text-decoration: underline; cursor: pointer; text-shadow: inherit; }
+.link-btn:focus-visible { outline: 3px solid var(--amber); outline-offset: 4px; }
+
+/* ---- help dialog: mini boards ---- */
+.modal.wide { width: min(100%, 980px); }
+.views { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; margin-top: 12px; }
+@media (max-width: 800px) { .views { grid-template-columns: 1fr; } }
+.view-card ul { margin: 6px 0 0; padding-left: 18px; color: var(--muted); font-size: 14px; line-height: 1.5; }
+.view-h { font-size: 18px; font-weight: 600; }
+.mini { position: relative; width: calc(var(--s) * 64); height: calc(var(--s) * 64); margin: 12px 8px 0 4px; background: #151831; box-shadow: 0 0 0 4px #3a4180, 0 0 0 8px #14102a; overflow: hidden; }
+.mini .pil { z-index: 6; }
+.mini-lock { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 7; }
+.root.start .three { margin-top: auto; }
+
+/* roomy screens: use the sizes of the approved design */
+@media (min-height: 800px) and (min-width: 1001px) {
+  .root.start .hero h1 { font-size: 136px; text-shadow: 8px 8px 0 var(--red); }
+  .root.start .hero .tag { font-size: 32px; max-width: 20ch; margin-top: 26px; }
+  .root.start .hero p:not(.tag):not(.fine):not(.sub) { font-size: 18px; max-width: 44ch; margin-top: 16px; }
+  .root.start .cta-row { margin-top: 26px; }
+}
+
+/* phones: title fits the width, scene becomes a fixed backdrop behind the scrolling content */
+@media (max-width: 700px) {
+  .root.start .hero { padding: 8px 16px 0; }
+  .root.start .hero h1 { font-size: clamp(40px, 17vw, 72px); text-shadow: 4px 4px 0 var(--red); }
+  .root.start .hero .tag { font-size: 24px; max-width: none; }
+  .root.start .hero p:not(.tag):not(.fine):not(.sub) { font-size: 16px; max-width: none; }
+  .root.start .cta-row .btn { flex: 1 1 100%; }
+  .root.start .three { padding: 16px 16px 24px; }
+  .root.start .three .panel { width: 100%; }
+  .scenebox { position: fixed; opacity: 0.55; }
+}
