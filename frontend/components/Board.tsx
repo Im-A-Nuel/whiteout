@@ -71,7 +71,7 @@ export function Board(p: BoardProps) {
   return (
     <div className="frame">
       <div className="snowcap" />
-      <div className="boardin" role="grid" aria-label="Temple board">
+      <div className="boardin" role="group" aria-label="Temple board">
         {Array.from({ length: 64 }, (_, cell) => {
           const key = reveal && pits.has(cell) ? pitKey(cell) : tileKey(cell);
           const deco = decor(cell);
@@ -105,7 +105,7 @@ export function Board(p: BoardProps) {
               {content}
             </button>
           ) : (
-            <div key={cell} className={cls} style={style} role="gridcell" aria-label={aria}>
+            <div key={cell} className={cls} style={style} {...(isGate || takenSet.has(cell) ? { role: "img", "aria-label": aria + (takenSet.has(cell) ? ", relic taken" : "") } : { "aria-hidden": true })}>
               {content}
             </div>
           );

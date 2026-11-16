@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { SEPOLIA_CHAIN_ID } from "@/lib/abi";
 import { connectWallet, contractConfigured, hasWallet, switchToSepolia, type Wallet } from "@/lib/chain";
+import { HowToPlayButton } from "./HowToPlay";
 import { Scene } from "./Scene";
 import { Pilgrim, shortAddr } from "./Pixel";
 
@@ -76,6 +77,7 @@ export function StartScreen() {
             <button type="button" className="btn lg" disabled>Contract not deployed yet</button>
           )}
           <Link href="/practice" className="btn alt lg">Practice run</Link>
+          <HowToPlayButton className="btn alt lg" />
         </div>
         {!hasWallet() && <p className="sub" style={{ marginTop: 10 }}>No browser wallet found. Install one to play on Sepolia, or try a practice run.</p>}
         {error && <p className="sub" role="alert" style={{ marginTop: 10, color: "#f0806f" }}>{error}</p>}

@@ -11,6 +11,7 @@ import { cellLabel } from "@/lib/zones";
 import { Board } from "./Board";
 import { ChainView, JourneyLog, JourneyRibbon, LanternPanel, PackPanel, SignalsPanel } from "./Hud";
 import { Icon, Panel, Pennants, Pilgrim, shortAddr } from "./Pixel";
+import { HowToPlayButton } from "./HowToPlay";
 import { RevealScreen } from "./RevealScreen";
 
 export type ViewMode = "split" | "you" | "chain";
@@ -76,6 +77,7 @@ export function Header({
           </span>
         )}
         {address && <span className="hash">{shortAddr(address)}</span>}
+        <HowToPlayButton />
         {onSound && (
           <button type="button" className="btn sm alt sound-btn" aria-pressed={!!sound} aria-label={sound ? "Sound on" : "Sound off"} onClick={onSound}>
             {sound ? "Sound on" : "Sound off"}

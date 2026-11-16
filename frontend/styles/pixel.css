@@ -15,6 +15,7 @@
   --amber: #ffb547;
   --amber-deep: #f26b3a;
   --red: #d6423a;
+  --red-btn: #cc3f37; /* primary button fill, 4.85:1 with white text (the spec red is 4.48:1) */
   --red-shade: #8e2430;
   --red-hi: #f0806f;
   --btn-alt: #2f3670;
@@ -74,7 +75,7 @@ body { color: var(--text); font-family: var(--font-pixel), "Silkscreen", ui-mono
 .btn {
   font: 600 18px var(--font-pixel), ui-monospace, monospace;
   color: #fff;
-  background: var(--red);
+  background: var(--red-btn);
   border: 0;
   margin: 4px;
   padding: 12px 22px;
@@ -184,10 +185,13 @@ body { color: var(--text); font-family: var(--font-pixel), "Silkscreen", ui-mono
 .signal { display: flex; gap: 14px; align-items: center; margin-top: 12px; padding: 10px; background: var(--bg-1); }
 .signal.cold { box-shadow: inset 0 0 0 4px #3c86b0; }
 .signal.glint { box-shadow: inset 0 0 0 4px #b8862b; }
-.signal.off { opacity: 0.4; }
+.signal.off .icon { opacity: 0.4; }
+.signal.off .lbl { color: var(--muted) !important; }
+.signal.off.cold { box-shadow: inset 0 0 0 4px #24506a; }
+.signal.off.glint { box-shadow: inset 0 0 0 4px #6b5120; }
 .signal .lbl { font-size: 20px; font-weight: 600; }
 .pulse { animation: pulseTxt 1.2s steps(1) infinite; }
-@keyframes pulseTxt { 50% { opacity: 0.5; } }
+@keyframes pulseTxt { 50% { opacity: 0.8; } }
 .logrow { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 10px; padding: 10px 0; border-top: 4px solid var(--outline); }
 .chain-row { display: grid; grid-template-columns: minmax(0, 1.1fr) 44px minmax(0, 1.5fr); gap: 8px; align-items: center; padding: 10px 0; border-bottom: 4px solid var(--outline); }
 .chain-row:last-of-type { border-bottom: 0; }
@@ -275,3 +279,26 @@ body { color: var(--text); font-family: var(--font-pixel), "Silkscreen", ui-mono
 @keyframes lift { from { opacity: 0.75; } to { opacity: 0; } }
 
 .sound-btn { min-width: 44px; }
+
+/* how to play dialog */
+.modal-back { position: fixed; inset: 0; z-index: 50; background: rgba(10, 12, 32, 0.82); display: flex; align-items: flex-start; justify-content: center; padding: 40px 16px; overflow-y: auto; }
+.modal { width: min(100%, 640px); margin: 4px; }
+@media (max-width: 700px) { .modal-back { padding: 16px 8px; } }
+
+/* tablet and small laptop: one column, board right after the lantern and chapter ribbon */
+@media (max-width: 1100px) {
+  .col-l, .col-c, .col-r { display: contents; }
+  .main { flex-direction: column; align-items: center; flex-wrap: nowrap; gap: 16px; }
+  .main > *, .col-l > *, .col-c > *, .col-r > * { order: 3; }
+  section[aria-label='Lantern oil'] { order: 1; }
+  section[aria-label='Journey'] { order: 2; }
+  section[aria-label^='Signals'] { order: 4; }
+  section[aria-label='Pack'] { order: 5; }
+  section[aria-label='Journey log'] { order: 6; }
+  section[aria-label='Chain view'], section[aria-label='Practice'], section[aria-label='Check the run'], section[aria-label='Revealed values'], section[aria-label='Share'] { order: 7; }
+}
+@media (min-width: 701px) and (max-width: 1100px) {
+  .main > *, .col-l > *, .col-c > *, .col-r > * { width: min(100%, 576px); }
+  .col-c > .frame { width: calc(var(--s) * 144); }
+  .main { padding-left: 16px; padding-right: 16px; }
+}

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Reveal } from "@/lib/driver";
 import { analyze, ENDING_LABEL } from "@/lib/reveal";
+import { renderCard } from "@/lib/shareCard";
 import { cellLabel } from "@/lib/zones";
 import { Board } from "./Board";
 import { ChainView, JourneyRibbon } from "./Hud";
@@ -45,6 +46,8 @@ export function RevealScreen({
   const reduced = useReducedMotion();
   const [idx, setIdx] = useState(total);
   const [playing, setPlaying] = useState(false);
+  const [shareMsg, setShareMsg] = useState<string>("");
+  const [sharing, setSharing] = useState(false);
 
   useEffect(() => {
     if (!playing) return;
@@ -64,6 +67,29 @@ export function RevealScreen({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reduced]);
+
+  const downloadCard = async () => {
+    setSharing(true);
+    setShareMsg("");
+    try {
+      const blob = await renderCard(a, { score: reveal.score, steps: total, runId, practice });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = practice ? "whiteout-practice.png" : `whiteout-run-${runId}.png`;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      setShareMsg("Card saved. Attach it to your post.");
+    } catch (e) {
+      setShareMsg(e instanceof Error ? e.message : "Could not make the card.");
+    } finally {
+      setSharing(false);
+    }
+  };
+  const postText = practice
+    ? `I scored ${reveal.score} in a Whiteout practice run. Fog of war where the chain can’t see you die.`
+    : `Run No. ${runId} in Whiteout: ${reveal.score} relics, ${total} of 24 steps. My position, moves and death stayed encrypted onchain until the end. Built on Zama FHEVM.`;
+  const postUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(postText + " " + (typeof window !== "undefined" ? window.location.origin : ""))}`;
 
   const trail = a.cells.slice(0, idx + 1);
   const taken = a.takenAt.filter((t) => t.step <= idx).map((t) => t.cell);
@@ -129,6 +155,16 @@ export function RevealScreen({
               </button>
             </div>
             <div className="sub" style={{ marginTop: 6 }}>Runs in your browser. Nothing is sent.</div>
+          </Panel>
+
+          <Panel label="Share">
+            <div className="h2">Share this run</div>
+            <div className="sub" style={{ marginTop: 4 }}>The card is drawn in your browser from the revealed map.</div>
+            <div className="row" style={{ gap: 4, marginTop: 10, flexWrap: "wrap" }}>
+              <button type="button" className="btn sm" disabled={sharing} onClick={() => void downloadCard()}>{sharing ? "Drawing..." : "Download card"}</button>
+              <a className="btn sm alt" href={postUrl} target="_blank" rel="noreferrer">Post on X</a>
+            </div>
+            <div className="sub" role="status" style={{ marginTop: 6 }}>{shareMsg}</div>
           </Panel>
         </div>
       )}
