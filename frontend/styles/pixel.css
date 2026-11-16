@@ -378,3 +378,35 @@ body { color: var(--text); font-family: var(--font-pixel), "Silkscreen", ui-mono
   .sub { color: #dbe3f5; }
   .btn.alt { box-shadow: inset 0 -4px 0 0 #1b1f42, inset 0 4px 0 0 #7f89d4, 0 -4px 0 0 #fff, 0 4px 0 0 #fff, -4px 0 0 0 #fff, 4px 0 0 0 #fff; }
 }
+
+/* start screen: fit one viewport. Sizes follow the viewport height, short screens may scroll. */
+.root.start { display: flex; flex-direction: column; }
+.root.start .hdr { padding: clamp(8px, 1.6vh, 20px) 40px 0; }
+.root.start .hero { padding: clamp(4px, 1.6vh, 28px) 56px 0; }
+.root.start .hero h1 { font-size: clamp(56px, 13vh, 136px); text-shadow: clamp(4px, 0.8vh, 8px) clamp(4px, 0.8vh, 8px) 0 var(--red); }
+.root.start .hero .tag { font-size: clamp(20px, 3.2vh, 32px); max-width: none; margin-top: clamp(4px, 1.2vh, 16px); }
+.root.start .hero p:not(.tag):not(.fine):not(.sub) { font-size: clamp(14px, 1.9vh, 18px); max-width: 60ch; margin-top: clamp(4px, 1vh, 12px); }
+.cta-row { gap: 6px; margin-top: clamp(8px, 1.8vh, 20px); flex-wrap: wrap; align-items: center; }
+.root.start .hero .fine { margin-top: clamp(6px, 1.2vh, 12px); max-width: 64ch; font-size: 14px; }
+.root.start .hero p.sub { margin-top: clamp(4px, 0.8vh, 8px); }
+.root.start .explain { margin-top: auto; padding: clamp(8px, 1.6vh, 16px) 56px clamp(8px, 1.4vh, 14px); }
+.root.start .explain .panel { padding: 10px 18px 12px; }
+.root.start .explain .h2 { font-size: 22px; }
+.root.start .explain-grid { margin-top: 8px; gap: 14px; }
+.root.start .explain ul { font-size: 13px; line-height: 1.4; }
+.root.start .explain-foot { margin-top: 6px; font-size: 13px; }
+.root.start .three { padding: 0 56px clamp(10px, 1.8vh, 24px); gap: 12px; }
+.root.start .three .panel { width: auto; flex: 1 1 0; max-width: 316px; padding: 8px 14px; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.root.start .three .h2 { font-size: 18px; }
+.root.start .walker { bottom: clamp(70px, 14vh, 150px); }
+@media (max-width: 1000px) {
+  .root.start .hdr, .root.start .hero, .root.start .explain, .root.start .three { padding-left: 20px; padding-right: 20px; }
+  .root.start .three .panel { max-width: none; flex-basis: 100%; }
+}
+
+/* short laptop screens: the three rule chips repeat How to play, drop them to avoid scrolling */
+@media (min-width: 1001px) and (max-height: 760px) {
+  .root.start .three { display: none; }
+  .root.start .hero h1 { font-size: clamp(48px, 11vh, 96px); }
+}
+.root.start .hero p.sub { font-size: 14px; max-width: 64ch; }

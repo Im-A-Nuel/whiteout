@@ -44,7 +44,7 @@ export function StartScreen() {
   const ready = contractConfigured();
 
   return (
-    <div className="root">
+    <div className="root start">
       <Scene />
       <div className="snow snowA" />
       <div className="snow snowB" />
@@ -71,7 +71,7 @@ export function StartScreen() {
         <h1>Whiteout</h1>
         <p className="tag">The chain can’t see you die.</p>
         <p>Climb a snowbound temple with one lantern and 24 steps. The map, your position and whether you still live stay encrypted until you finish.</p>
-        <div className="row" style={{ gap: 6, marginTop: 22, flexWrap: "wrap", alignItems: "center" }}>
+        <div className="row cta-row">
           {!wallet ? (
             <button type="button" className="btn lg" disabled={busy || !hasEth} onClick={() => void connect()}>
               {busy ? "Connecting..." : "Connect wallet"}
@@ -99,7 +99,7 @@ export function StartScreen() {
         )}
         {!hasEth && <p className="sub" style={{ marginTop: 10 }}>No browser wallet found. Install one to play on Sepolia, or try a practice run.</p>}
         {error && <p className="sub" role="alert" style={{ marginTop: 10, color: "#f0806f" }}>{error}</p>}
-        <p className="sub" style={{ marginTop: 14, maxWidth: "52ch" }}>
+        <p className="sub fine">
           Practice runs play on your device, with nothing encrypted. Real runs need Sepolia ETH for gas.{" "}
           <a href="https://cloud.google.com/application/web3/faucet/ethereum/sepolia" target="_blank" rel="noreferrer" style={{ color: "var(--amber)" }}>Get Sepolia ETH</a>.
         </p>
@@ -109,7 +109,7 @@ export function StartScreen() {
 
       <section className="explain" aria-label="What the chain sees">
         <div className="panel">
-          <div className="h2" style={{ fontSize: 26 }}>What the chain sees, and what only you see</div>
+          <div className="h2">What the chain sees, and what only you see</div>
           <div className="explain-grid">
             <div>
               <div className="explain-h">Public on Sepolia</div>
@@ -136,7 +136,7 @@ export function StartScreen() {
               </ul>
             </div>
           </div>
-          <p className="sub" style={{ marginTop: 10 }}>If the state were public, the next player would copy every pit and there would be no game.</p>
+          <p className="sub explain-foot">If the state were public, the next player would copy every pit and there would be no game.</p>
         </div>
       </section>
 
