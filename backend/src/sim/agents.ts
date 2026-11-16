@@ -172,3 +172,4 @@ export function playRun(agent: Agent, state: EngineState, treasureOnMap: number)
     collected: s.collected,
     treasureOnMap,
   };
+}
