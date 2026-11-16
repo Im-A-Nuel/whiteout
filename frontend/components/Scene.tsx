@@ -33,7 +33,7 @@ export function Scene() {
   return (
     <>
       <div className="sky" />
-      <svg className="ridge" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMax slice" shapeRendering="crispEdges" aria-hidden="true" style={{ height: "100%", imageRendering: "pixelated" }}>
+      <svg className="ridge" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMax slice" shapeRendering="crispEdges" aria-hidden="true" style={{ width: "100%", height: "100%", imageRendering: "pixelated" }}>
         {STARS.map((s, i) => (
           <rect key={i} x={s.x} y={s.y} width={s.big ? 2 : 1} height={s.big ? 2 : 1} fill={s.big ? "#EAF1F7" : "#A9B6D6"} />
         ))}

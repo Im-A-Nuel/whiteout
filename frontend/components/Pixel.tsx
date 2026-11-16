@@ -13,15 +13,17 @@ export function Panel({
   stone,
   good,
   style,
+  className = "",
 }: {
   children: ReactNode;
+  className?: string;
   label?: string;
   stone?: boolean;
   good?: boolean;
   style?: CSSProperties;
 }) {
   return (
-    <section className={`panel${stone ? " stone" : ""}${good ? " good" : ""}`} aria-label={label} style={style}>
+    <section className={`panel${stone ? " stone" : ""}${good ? " good" : ""}${className ? " " + className : ""}`} aria-label={label} style={style}>
       {children}
     </section>
   );

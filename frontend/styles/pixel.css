@@ -302,3 +302,51 @@ body { color: var(--text); font-family: var(--font-pixel), "Silkscreen", ui-mono
   .col-c > .frame { width: calc(var(--s) * 144); }
   .main { padding-left: 16px; padding-right: 16px; }
 }
+
+/* d-pad, dock and mobile chain-view sheet */
+.dpad { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.dock-actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.mobile-only { display: none; }
+.sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; max-height: 78vh; overflow-y: auto; background: var(--bg-0); padding: 12px 10px 20px; box-shadow: 0 -4px 0 0 var(--panel-edge); }
+.boardin { touch-action: none; }
+@media (max-width: 700px) {
+  .dpad { display: grid; grid-template-columns: repeat(3, 60px); grid-template-rows: repeat(3, 60px); gap: 0; }
+  .dpad .key { margin: 4px; }
+  .dpad .k0 { grid-area: 1 / 2; }
+  .dpad .k2 { grid-area: 2 / 1; }
+  .dpad .k3 { grid-area: 2 / 3; }
+  .dpad .k1 { grid-area: 3 / 2; }
+  .dock { align-items: flex-end !important; flex-wrap: nowrap !important; justify-content: space-between; }
+  .dock-actions { flex-direction: column; align-items: stretch; }
+  .mobile-only { display: inline-flex; }
+  .main { padding-bottom: 240px; }
+}
+
+.scrub { width: 100%; height: 28px; margin: 0; accent-color: var(--amber); background: transparent; cursor: pointer; }
+.scrub:focus-visible { outline: 3px solid var(--amber); outline-offset: 4px; }
+
+/* mobile: keep the board near the top of the first screen */
+@media (max-width: 700px) {
+  .lantern-panel { padding: 8px 14px 12px; }
+  .lantern-head { display: none !important; }
+  .lantern-panel [aria-label$='steps left'] { font-size: 44px !important; text-shadow: 3px 3px 0 var(--outline) !important; }
+  .lantern-panel div[role='img'] { margin-top: 8px !important; }
+  .ribbon { margin-bottom: 0 !important; padding: 8px 12px 10px !important; }
+  .ribbon-row { margin-top: 8px !important; }
+  .ribbon .sub { display: none; }
+  .notice { margin: 0 8px; }
+}
+
+@media (max-width: 700px) {
+  .main { align-items: stretch; }
+  .hdr .btn.sm { white-space: nowrap; padding: 8px 10px; font-size: 14px; margin: 3px; }
+  .hdr .seg .btn.sm { padding: 8px 8px; font-size: 13px; }
+  .notice { padding: 8px 12px; gap: 8px; font-size: 14px; }
+  .notice .btn { margin: 2px; min-height: 40px; }
+  .lantern-panel { padding: 6px 14px 10px; }
+  .lantern-panel [aria-label$='steps left'] { font-size: 36px !important; }
+  .lantern-panel .row { margin-top: 2px !important; }
+}
+
+.boardwrap { scroll-margin-top: 8px; }
+.steps-chip { justify-content: center; font-weight: 700; color: var(--amber); padding: 2px 0; }

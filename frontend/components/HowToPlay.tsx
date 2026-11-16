@@ -89,3 +89,33 @@ export function HowToPlayButton({ className = "btn sm alt" }: { className?: stri
     </>
   );
 }
+
+const SEEN = "whiteout:seen-help";
+
+/** Shown once to a new visitor, then remembered. */
+export function FirstVisitHint() {
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    try {
+      setShow(localStorage.getItem(SEEN) !== "1");
+    } catch {
+      setShow(false);
+    }
+  }, []);
+  if (!show) return null;
+  const dismiss = () => {
+    try {
+      localStorage.setItem(SEEN, "1");
+    } catch {
+      /* storage can be unavailable */
+    }
+    setShow(false);
+  };
+  return (
+    <div className="notice" role="region" aria-label="New here">
+      <span>New here? The rules take one minute to read.</span>
+      <HowToPlayButton className="btn sm" />
+      <button type="button" className="btn sm alt" onClick={dismiss}>Got it</button>
+    </div>
+  );
+}

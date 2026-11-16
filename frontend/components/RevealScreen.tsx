@@ -28,6 +28,7 @@ export function RevealScreen({
   reveal,
   runId,
   practice,
+  simulated,
   trailLive,
   view,
   handles,
@@ -36,6 +37,7 @@ export function RevealScreen({
   reveal: Reveal;
   runId: string;
   practice: boolean;
+  simulated?: boolean;
   trailLive: number[];
   view: ViewMode;
   handles?: { pos: string; alive: string; hazards: string };
@@ -46,6 +48,7 @@ export function RevealScreen({
   const reduced = useReducedMotion();
   const [idx, setIdx] = useState(total);
   const [playing, setPlaying] = useState(false);
+  const [speed, setSpeed] = useState<1 | 2>(1);
   const [shareMsg, setShareMsg] = useState<string>("");
   const [sharing, setSharing] = useState(false);
 
@@ -55,9 +58,9 @@ export function RevealScreen({
       setPlaying(false);
       return;
     }
-    const t = setTimeout(() => setIdx((i) => Math.min(total, i + 1)), STEP_MS);
+    const t = setTimeout(() => setIdx((i) => Math.min(total, i + 1)), STEP_MS / speed);
     return () => clearTimeout(t);
-  }, [playing, idx, total]);
+  }, [playing, idx, total, speed]);
 
   // start the replay once, unless the visitor prefers reduced motion
   useEffect(() => {
@@ -100,7 +103,7 @@ export function RevealScreen({
   const visited = new Set(a.cells);
   const missed = a.prizes.filter((c) => !a.takenAt.some((t) => t.cell === c));
   const stamp = ENDING_LABEL[a.ending];
-  const onChain = !practice && !!reveal.finalizeTx;
+  const onChain = !practice && !simulated && !!reveal.finalizeTx;
 
   const body =
     a.ending === "home"
@@ -141,18 +144,35 @@ export function RevealScreen({
           <Panel label="Replay">
             <div className="h2">Replay</div>
             <PipRow total={Math.max(total, 1)} on={idx} label={`Replay at ${idx} of ${total}`} white cols={Math.min(14, Math.max(total, 1))} gap={4} />
+            <label className="sub" style={{ display: "block", marginTop: 10 }}>
+              <span className="sr-only">Replay step</span>
+              <input
+                type="range"
+                className="scrub"
+                min={0}
+                max={total}
+                value={idx}
+                aria-label="Replay step"
+                aria-valuetext={`Step ${idx} of ${total}`}
+                onChange={(e) => { setPlaying(false); setIdx(Number(e.target.value)); }}
+              />
+            </label>
             <div className="row" style={{ gap: 2, marginTop: 10, flexWrap: "wrap" }}>
               <button type="button" className="btn alt key" style={{ width: 48, height: 48 }} aria-label="Back one step" onClick={() => { setPlaying(false); setIdx((i) => Math.max(0, i - 1)); }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src="/sprites/arrow.png" alt="" style={{ transform: "rotate(270deg)" }} />
               </button>
               <button type="button" className="btn" style={{ padding: "10px 12px", fontSize: 16 }} onClick={() => { setIdx(0); setPlaying(true); }}>
-                Play again
+                {playing ? "Replaying" : "Play again"}
               </button>
               <button type="button" className="btn alt key" style={{ width: 48, height: 48 }} aria-label="Forward one step" onClick={() => { setPlaying(false); setIdx((i) => Math.min(total, i + 1)); }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src="/sprites/arrow.png" alt="" style={{ transform: "rotate(90deg)" }} />
               </button>
+            </div>
+            <div className="row" style={{ gap: 6, alignItems: "center", marginTop: 8 }}>
+              <button type="button" className="btn sm alt" aria-pressed={speed === 2} onClick={() => setSpeed((v) => (v === 1 ? 2 : 1))}>Speed {speed}x</button>
+              <span className="sub">Step {idx} of {total}</span>
             </div>
             <div className="sub" style={{ marginTop: 6 }}>Runs in your browser. Nothing is sent.</div>
           </Panel>
@@ -201,6 +221,7 @@ export function RevealScreen({
           <>
             <Panel label="Check the run">
               <div className="h2">Check the run</div>
+              {simulated && <div className="sub" style={{ marginTop: 4 }}>This is a preview. Nothing was sent to Sepolia.</div>}
               <ol className="steps-list">
                 {[
                   ["Finish opens the map", "The contract marks the map, path and score as public."],
@@ -220,7 +241,7 @@ export function RevealScreen({
                 <span className="muted">Pits</span><span className="hash">0x{reveal.hazards.toString(16).padStart(16, "0")}</span>
                 <span className="muted">Relics</span><span className="hash">0x{reveal.prizes.toString(16).padStart(16, "0")}</span>
                 <span className="muted">Moves</span><b style={{ fontWeight: 600 }}>{total}</b>
-                <span className="muted">Finalize tx</span><span className="hash">{shortHash(reveal.finalizeTx) || "see Etherscan"}</span>
+                <span className="muted">Finalize tx</span><span className="hash">{simulated ? "simulated" : shortHash(reveal.finalizeTx) || "see Etherscan"}</span>
               </div>
               {onChain && (
                 <a className="btn sm alt" style={{ marginTop: 14 }} href={`https://sepolia.etherscan.io/tx/${reveal.finalizeTx}`} target="_blank" rel="noreferrer">

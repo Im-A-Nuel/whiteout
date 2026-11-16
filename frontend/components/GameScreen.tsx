@@ -11,7 +11,7 @@ import { cellLabel } from "@/lib/zones";
 import { Board } from "./Board";
 import { ChainView, JourneyLog, JourneyRibbon, LanternPanel, PackPanel, SignalsPanel } from "./Hud";
 import { Icon, Panel, Pennants, Pilgrim, shortAddr } from "./Pixel";
-import { HowToPlayButton } from "./HowToPlay";
+import { FirstVisitHint, HowToPlayButton } from "./HowToPlay";
 import { RevealScreen } from "./RevealScreen";
 
 export type ViewMode = "split" | "you" | "chain";
@@ -26,6 +26,7 @@ export function Header({
   chainOk = true,
   sound,
   onSound,
+  simulated,
 }: {
   runId?: string;
   practice?: boolean;
@@ -36,6 +37,7 @@ export function Header({
   chainOk?: boolean;
   sound?: boolean;
   onSound?: () => void;
+  simulated?: boolean;
 }) {
   return (
     <header className="row hdr">
@@ -54,6 +56,11 @@ export function Header({
           </div>
         )
       )}
+      {simulated && (
+        <div className="panel" style={{ padding: "4px 14px", margin: 4, background: "#3a2a12", boxShadow: "0 -4px 0 0 #b8862b, 0 4px 0 0 #b8862b, -4px 0 0 0 #b8862b, 4px 0 0 0 #b8862b, 0 8px 0 0 var(--panel-drop)" }}>
+          <span style={{ fontSize: 15, fontWeight: 600 }}>Simulated chain, nothing is on Sepolia</span>
+        </div>
+      )}
       {finalized && (
         <span className="panel good" style={{ padding: "4px 14px", margin: 4 }}>
           <span style={{ fontSize: 16, fontWeight: 600 }}>Finalized</span>
@@ -70,7 +77,7 @@ export function Header({
         </div>
       )}
       <div className="row" style={{ alignItems: "center", gap: 12, fontSize: 14 }}>
-        {!practice && (
+        {!practice && !simulated && (
           <span className="row" style={{ alignItems: "center", gap: 8 }}>
             <span className={`dotnet${chainOk ? "" : " warn"}`} />
             Sepolia
@@ -98,9 +105,9 @@ const ARROWS: { dir: number; rot: number; label: string }[] = [
 
 export function DPad({ onMove, disabled }: { onMove: (d: number) => void; disabled?: boolean }) {
   return (
-    <div className="row" style={{ alignItems: "center", gap: 6, flexWrap: "wrap" }} role="group" aria-label="Move">
+    <div className="dpad" role="group" aria-label="Move">
       {ARROWS.map((a) => (
-        <button key={a.dir} type="button" className="btn alt key" aria-label={a.label} disabled={disabled} onClick={() => onMove(a.dir)}>
+        <button key={a.dir} type="button" className={`btn alt key k${a.dir}`} aria-label={a.label} disabled={disabled} onClick={() => onMove(a.dir)}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/sprites/arrow.png" alt="" style={{ transform: `rotate(${a.rot}deg)` }} />
         </button>
@@ -116,7 +123,12 @@ export function GameScreen({ driver, address, resume }: { driver: Driver; addres
   const [sound, setSoundState] = useState(false);
   const [card, setCard] = useState<{ ch: number; step: number } | null>(null);
   const prev = useRef({ moves: 0, relics: 0, cold: false, alive: true, phase: "starting" as string });
+  const [sheet, setSheet] = useState(false);
+  const boardRef = useRef<HTMLDivElement>(null);
+  const scrolled = useRef(false);
+  const swipe = useRef<{ x: number; y: number; done: boolean } | null>(null);
   const practice = driver.mode === "practice";
+  const simulated = !!driver.simulated;
   const playing = s.phase === "playing";
   const out = s.moves >= MAX_MOVES;
   const dead = !s.alive;
@@ -133,7 +145,10 @@ export function GameScreen({ driver, address, resume }: { driver: Driver; addres
       } else if (e.key === "Enter" && playing && t?.tagName !== "BUTTON") {
         e.preventDefault();
         setConfirming(true);
-      } else if (e.key === "Escape") setConfirming(false);
+      } else if (e.key === "Escape") {
+        setConfirming(false);
+        setSheet(false);
+      }
     },
     [playing, confirming, move],
   );
@@ -143,6 +158,13 @@ export function GameScreen({ driver, address, resume }: { driver: Driver; addres
   }, [key]);
 
   useEffect(() => setSoundState(loadSoundPref()), []);
+
+  // phones: bring the board into view once when the run starts, the lantern count lives in the dock
+  useEffect(() => {
+    if (s.phase !== "playing" || scrolled.current) return;
+    scrolled.current = true;
+    if (window.matchMedia("(max-width: 700px)").matches) boardRef.current?.scrollIntoView({ block: "start", behavior: "auto" });
+  }, [s.phase]);
   const toggleSound = () => {
     const next = !sound;
     setSound(next);
@@ -177,11 +199,12 @@ export function GameScreen({ driver, address, resume }: { driver: Driver; addres
     return (
       <div className="root" style={{ ["--s" as string]: "4px" }}>
         <div className="snow snowA" style={{ opacity: 0.55 }} />
-        <Header runId={s.runId} practice={practice} finalized={!practice} address={address} view={view} onView={setView} sound={sound} onSound={toggleSound} />
+        <Header runId={s.runId} practice={practice} finalized={!practice} address={address} view={view} onView={setView} sound={sound} onSound={toggleSound} simulated={simulated} />
         <RevealScreen
           reveal={s.reveal}
           runId={s.runId}
           practice={practice}
+          simulated={simulated}
           trailLive={s.cells}
           view={view}
           handles={s.confirmed?.handles}
@@ -197,8 +220,9 @@ export function GameScreen({ driver, address, resume }: { driver: Driver; addres
     <div className="root">
       <div className="snow snowA" />
       <div className="snow snowB" />
-      <Header runId={s.runId || undefined} practice={practice} address={address} view={view} onView={setView} sound={sound} onSound={toggleSound} />
+      <Header runId={s.runId || undefined} practice={practice} address={address} view={view} onView={setView} sound={sound} onSound={toggleSound} simulated={simulated} />
       <div className="sr-only" aria-live="polite">{s.announce}</div>
+      <FirstVisitHint />
 
       {s.phase === "starting" && (
         <div className="notice" role="status">
@@ -231,7 +255,22 @@ export function GameScreen({ driver, address, resume }: { driver: Driver; addres
           <div className="col-c" style={view === "you" ? { width: "min(100%, 640px)" } : undefined}>
             <JourneyRibbon cells={s.cells} current={s.pos} />
             <Pennants />
-            <div className="boardwrap">
+            <div
+              ref={boardRef}
+              className="boardwrap"
+              onPointerDown={(e) => { if (e.pointerType === "touch") swipe.current = { x: e.clientX, y: e.clientY, done: false }; }}
+              onPointerUp={(e) => {
+                const st = swipe.current;
+                swipe.current = null;
+                if (!st || !playing || confirming) return;
+                const dx = e.clientX - st.x;
+                const dy = e.clientY - st.y;
+                if (Math.max(Math.abs(dx), Math.abs(dy)) < 32) return;
+                move(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 3 : 2) : dy > 0 ? 1 : 0);
+                swipe.current = { x: 0, y: 0, done: true };
+              }}
+              onClickCapture={(e) => { if (swipe.current?.done) { swipe.current = null; e.stopPropagation(); e.preventDefault(); } }}
+            >
             {card && (
               <div className="chapter-card" role="status">
                 <div className="k">Chapter {card.ch + 1}, step {card.step}</div>
@@ -282,14 +321,23 @@ export function GameScreen({ driver, address, resume }: { driver: Driver; addres
               <div className="row dock" style={{ alignItems: "center", gap: 6, marginTop: 22, flexWrap: "wrap" }}>
                 <DPad onMove={move} disabled={!playing || out} />
                 <div style={{ flex: "1 1 0", minWidth: 12 }} />
-                {busyFinish ? (
-                  <button type="button" className="btn" disabled>{s.phase === "finishing" ? "Opening the map..." : "Checking the proof..."}</button>
-                ) : (
-                  <button type="button" className="btn" disabled={!playing} onClick={() => setConfirming(true)}>Finish run</button>
-                )}
+                <div className="dock-actions">
+                  <span className="mobile-only steps-chip" role="status" aria-label={`${MAX_MOVES - s.moves} of ${MAX_MOVES} steps left`}>{MAX_MOVES - s.moves} steps left</span>
+                  {!practice && (
+                    <button type="button" className="btn alt mobile-only" aria-haspopup="dialog" onClick={() => setSheet(true)}>Chain view</button>
+                  )}
+                  {busyFinish ? (
+                    <button type="button" className="btn" disabled>{s.phase === "finishing" ? "Opening the map..." : "Checking the proof..."}</button>
+                  ) : (
+                    <button type="button" className="btn" disabled={!playing} onClick={() => setConfirming(true)}>Finish run</button>
+                  )}
+                </div>
               </div>
             )}
-            <div className="sub" style={{ marginTop: 10 }}>
+            <div className="sub" role="status" aria-live="polite" style={{ marginTop: 10, minHeight: 20, color: "var(--amber)" }}>
+              {s.decrypting ? (s.queued ? "Decrypting... one step is queued." : "Decrypting...") : ""}
+            </div>
+            <div className="sub" style={{ marginTop: 4 }}>
               Arrow keys or WASD to move. Click a dark tile to mark a suspected pit. Enter to finish.
             </div>
           </div>
@@ -310,6 +358,15 @@ export function GameScreen({ driver, address, resume }: { driver: Driver; addres
           </div>
         )}
       </main>
+
+      {sheet && !practice && (
+        <div className="sheet" role="dialog" aria-label="Chain view">
+          <div className="row" style={{ justifyContent: "flex-end" }}>
+            <button type="button" className="btn sm alt" autoFocus onClick={() => setSheet(false)}>Close</button>
+          </div>
+          <ChainView runId={s.runId || "0"} you={you} handles={s.confirmed?.handles} txs={s.txs} expanded />
+        </div>
+      )}
     </div>
   );
 }

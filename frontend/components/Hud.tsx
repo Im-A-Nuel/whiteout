@@ -8,8 +8,8 @@ import { Icon, Panel, Pilgrim, PipRow, shortHash } from "./Pixel";
 export function LanternPanel({ moves }: { moves: number }) {
   const left = MAX_MOVES - moves;
   return (
-    <Panel label="Lantern oil">
-      <div className="row" style={{ alignItems: "center", gap: 14 }}>
+    <Panel label="Lantern oil" className="lantern-panel">
+      <div className="row lantern-head" style={{ alignItems: "center", gap: 14 }}>
         <Icon name="lantern" size={48} />
         <div>
           <div className="h2">Lantern oil</div>
@@ -91,12 +91,12 @@ export function JourneyRibbon({
   const title = revealed ? `Reached ${reached.size} of 5 chapters` : `Chapter ${cur + 1} of 5`;
   const subtitle = revealed ? (reached.size === 5 ? "You crossed the whole road" : "The rest of the road stayed unseen") : "Where this road has led you so far";
   return (
-    <Panel label="Journey" style={{ padding: "12px 16px 14px", marginBottom: 22 }}>
+    <Panel label="Journey" className="ribbon" style={{ padding: "12px 16px 14px", marginBottom: 22 }}>
       <div className="row" style={{ alignItems: "baseline", gap: 12, justifyContent: "space-between", flexWrap: "wrap" }}>
         <span className="h2">{title}</span>
         <span className="sub">{subtitle}</span>
       </div>
-      <div className="row" style={{ alignItems: "flex-start", marginTop: 30, padding: "0 2px" }}>
+      <div className="row ribbon-row" style={{ alignItems: "flex-start", marginTop: 30, padding: "0 2px" }}>
         {CHAPTERS.map((ch, i) => {
           const isCur = !revealed && i === cur;
           const isReached = reached.has(i);

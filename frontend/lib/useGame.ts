@@ -29,6 +29,8 @@ export interface GameState {
   announce: string;
   /** Last relic pickup, for the sparkle burst. Not persisted. */
   pickup: { cell: number; id: number } | null;
+  /** One input is waiting for the current step to finish. */
+  queued: boolean;
 }
 
 const initial: GameState = {
@@ -50,6 +52,7 @@ const initial: GameState = {
   error: null,
   announce: "",
   pickup: null,
+  queued: false,
 };
 
 /** Predicts the next cell from public rules only. It knows nothing about pits. */
@@ -192,6 +195,7 @@ export function useGame(driver: Driver, resume?: boolean) {
         busy.current = false;
         const next = queued.current;
         queued.current = null;
+        if (next !== null) update((p) => ({ ...p, queued: false }));
         if (next !== null) void run(next);
       }
     },
@@ -202,6 +206,7 @@ export function useGame(driver: Driver, resume?: boolean) {
     (dir: number) => {
       if (busy.current) {
         queued.current = dir; // one pending input
+        update((p) => ({ ...p, queued: true }));
         return;
       }
       void run(dir);

@@ -30,6 +30,8 @@ export interface RunInit {
 export interface Driver {
   readonly mode: "practice" | "chain";
   readonly label: string;
+  /** True for the preview driver: behaves like chain mode but nothing is on Sepolia. */
+  readonly simulated?: boolean;
   /** Resolves with the opening signals at the gate. */
   begin(): Promise<RunInit>;
   move(dir: number): Promise<StepResult>;
