@@ -396,9 +396,17 @@ export function GameScreen({ driver, address, resume }: { driver: Driver; addres
             {!practice && <ChainView runId={s.runId || "0"} you={you} handles={s.confirmed?.handles} txs={s.txs} expanded={view === "chain"} />}
             {practice && view === "split" && (
               <Panel label="Practice">
-                <div className="h2">Practice</div>
-                <div className="sub" style={{ marginTop: 6 }}>
-                  This run plays on your device, so there is no Chain view. Connect a wallet on the start screen to play on Sepolia.
+                <div className="row" style={{ alignItems: "center", gap: 12 }}>
+                  <Icon name="lantern" size={36} />
+                  <div className="h2">Practice tips</div>
+                </div>
+                <ul className="tips">
+                  <li>Cold means a pit is next to you. Quiet cells are safe to leave behind.</li>
+                  <li>Click a dark tile to note a pit. Notes stay on your device.</li>
+                  <li>Plan the way back: only relics carried to the gate at A1 count.</li>
+                </ul>
+                <div className="sub" style={{ marginTop: 8 }}>
+                  This run plays on your device, so there is no Chain view. Connect a wallet on the start screen for Sepolia.
                 </div>
               </Panel>
             )}

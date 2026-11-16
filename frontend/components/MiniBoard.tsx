@@ -42,7 +42,7 @@ export function MiniBoard({ mode, label }: { mode: MiniMode; label: string }) {
   for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) cells.push(cellOf(r, c));
 
   return (
-    <div className="mini" role="img" aria-label={label} style={{ ["--s" as string]: "3px" } as CSSProperties}>
+    <div className="miniboard" role="img" aria-label={label} style={{ ["--s" as string]: "3px" } as CSSProperties}>
       {cells.map((c) => {
         const reveal = mode === "reveal";
         const pit = reveal && PITS.has(c);

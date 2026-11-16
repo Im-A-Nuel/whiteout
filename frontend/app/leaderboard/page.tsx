@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Header } from "@/components/GameScreen";
-import { PipRow, shortAddr } from "@/components/Pixel";
+import { Podium, type PodiumEntry } from "@/components/Art";
+import { PageShell } from "@/components/PageShell";
+import { Pilgrim, PipRow, shortAddr } from "@/components/Pixel";
 import { contractConfigured, fetchFinalized } from "@/lib/chain";
 import { bestOf, markMine } from "@/lib/leaderboard";
 
@@ -37,56 +38,73 @@ export default function LeaderboardPage() {
     };
   }, [tries]);
 
-  return (
-    <div className="root">
-      <div className="snow snowA" />
-      <Header />
-      <main style={{ position: "relative", zIndex: 10, padding: "16px 40px 40px", display: "flex", justifyContent: "center" }}>
-        <div className="panel" style={{ width: "min(100%, 860px)" }}>
-          <div className="h2">Leaderboard</div>
-          <div className="sub">Finalized runs, best first. Built from RunFinalized events on Sepolia.</div>
+  const rows = state.kind === "ready" ? state.rows : [];
+  const podium: PodiumEntry[] = rows.slice(0, 3).map((r, i) => ({ rank: (i + 1) as 1 | 2 | 3, label: shortAddr(r.player), score: r.score }));
+  const best = state.kind === "ready" ? bestOf(state.rows, me) : null;
 
-          {state.kind === "loading" && <p className="pulse">Reading finalized runs...</p>}
-          {state.kind === "unconfigured" && <p>The contract address is not configured for this build, so there is nothing to read yet.</p>}
-          {state.kind === "error" && (
-            <div className="errbox" role="alert">
-              <div>Could not read the leaderboard. {state.message}</div>
-              <button type="button" className="btn sm" onClick={() => setTries((n) => n + 1)}>Retry</button>
-            </div>
-          )}
-          {state.kind === "ready" && state.rows.length === 0 && (
-            <p>No run has been finalized yet. <Link href="/" style={{ color: "var(--amber)" }}>Play the first one.</Link></p>
-          )}
-          {state.kind === "ready" && bestOf(state.rows, me) && (
-            <p className="sub" style={{ marginTop: 10, color: "var(--amber)" }}>
-              Your best: {bestOf(state.rows, me)!.score} relics in {bestOf(state.rows, me)!.steps} steps (run {bestOf(state.rows, me)!.runId}).
-            </p>
-          )}
-          {state.kind === "ready" && state.rows.length > 0 && (
-            <div style={{ overflowX: "auto", marginTop: 10 }}>
-              <table className="table">
-                <thead>
-                  <tr><th>Rank</th><th>Wallet</th><th>Score</th><th>Steps</th><th>Replay</th></tr>
-                </thead>
-                <tbody>
-                  {markMine(state.rows, me).map((r, i) => (
-                    <tr key={r.runId} className={r.mine ? "mine" : undefined}>
-                      <td className="amber" style={{ fontWeight: 700 }}>{i + 1}</td>
-                      <td className="hash">{shortAddr(r.player)}{r.mine && <span className="you-tag">You</span>}</td>
-                      <td style={{ fontWeight: 700 }}>{r.score}</td>
-                      <td>
-                        <span className="sr-only">{r.steps} of 24</span>
-                        <PipRow total={24} on={r.steps} label={`${r.steps} of 24 steps`} white cols={24} gap={2} />
-                      </td>
-                      <td><Link href={`/run/${r.runId}`} className="btn sm alt">Run {r.runId}</Link></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+  return (
+    <PageShell wide>
+      <div className="panel lb">
+        <div className="h2" style={{ fontSize: 28 }}>Leaderboard</div>
+        <div className="sub">Finalized runs, best first. Built from RunFinalized events on Sepolia.</div>
+
+        <div className="lb-hero">
+          <Pilgrim variant="down" bob still scale={6} style={{ position: "relative" }} />
+          <Podium entries={podium} />
+          <div className="lb-msg">
+            {state.kind === "loading" && <p className="pulse">Reading finalized runs...</p>}
+            {state.kind === "unconfigured" && (
+              <>
+                <p>No contract is connected to this build, so there are no runs to show yet.</p>
+                <Link href="/practice" className="btn sm">Try a practice run</Link>
+              </>
+            )}
+            {state.kind === "error" && (
+              <div className="errbox" role="alert" style={{ marginTop: 0 }}>
+                <div>Could not read the leaderboard.</div>
+                <div className="sub">{state.message}</div>
+                <button type="button" className="btn sm" onClick={() => setTries((n) => n + 1)}>Retry</button>
+              </div>
+            )}
+            {state.kind === "ready" && rows.length === 0 && (
+              <>
+                <p>No run has been finalized yet. The first relics home take the gold step.</p>
+                <Link href="/" className="btn sm">Play the first run</Link>
+              </>
+            )}
+            {state.kind === "ready" && rows.length > 0 && (
+              <p>
+                {rows.length} finalized {rows.length === 1 ? "run" : "runs"}.{" "}
+                {best && <span style={{ color: "var(--amber)" }}>Your best: {best.score} relics in {best.steps} steps (run {best.runId}).</span>}
+              </p>
+            )}
+          </div>
         </div>
-      </main>
-    </div>
+
+        {state.kind === "ready" && rows.length > 0 && (
+          <div style={{ overflowX: "auto", marginTop: 18 }}>
+            <table className="table">
+              <thead>
+                <tr><th>Rank</th><th>Wallet</th><th>Score</th><th>Steps</th><th>Replay</th></tr>
+              </thead>
+              <tbody>
+                {markMine(rows, me).map((r, i) => (
+                  <tr key={r.runId} className={r.mine ? "mine" : undefined}>
+                    <td className="amber" style={{ fontWeight: 700 }}>{i + 1}</td>
+                    <td className="hash">{shortAddr(r.player)}{r.mine && <span className="you-tag">You</span>}</td>
+                    <td style={{ fontWeight: 700 }}>{r.score}</td>
+                    <td>
+                      <span className="sr-only">{r.steps} of 24</span>
+                      <PipRow total={24} on={r.steps} label={`${r.steps} of 24 steps`} white cols={24} gap={2} />
+                    </td>
+                    <td><Link href={`/run/${r.runId}`} className="btn sm alt">Run {r.runId}</Link></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </PageShell>
   );
 }

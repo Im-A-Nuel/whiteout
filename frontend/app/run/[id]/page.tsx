@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { use, useEffect, useMemo, useState } from "react";
 import { GameScreen, Header, type ViewMode } from "@/components/GameScreen";
+import { PageShell } from "@/components/PageShell";
+import { Pilgrim } from "@/components/Pixel";
 import { RevealScreen } from "@/components/RevealScreen";
 import { SEPOLIA_CHAIN_ID } from "@/lib/abi";
 import { ChainDriver, connectWallet, contractConfigured, fetchRevealed, hasWallet, switchToSepolia, type Wallet } from "@/lib/chain";
@@ -125,15 +127,14 @@ export default function RunPage({ params }: { params: Promise<{ id: string }> })
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="root">
-      <div className="snow snowA" />
-      <Header />
-      <main style={{ position: "relative", zIndex: 10, padding: "16px 40px 40px", maxWidth: 640 }}>
-        <div className="panel" style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "flex-start" }}>
-          <div className="h2">Run</div>
+    <PageShell>
+      <div className="panel shell-card">
+        <Pilgrim variant="down" bob still scale={6} style={{ position: "relative", flex: "none" }} />
+        <div style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "flex-start", minWidth: 0 }}>
+          <div className="h2" style={{ fontSize: 28 }}>Run</div>
           {children}
         </div>
-      </main>
-    </div>
+      </div>
+    </PageShell>
   );
 }
