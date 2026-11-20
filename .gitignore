@@ -19,17 +19,12 @@ coverage/
 coverage.json
 *.tsbuildinfo
 
-# contract (hardhat / fhevm)
-contract/artifacts/
-contract/cache/
-contract/types/
-contract/typechain-types/
-contract/fhevmTemp/
-contract/.coverage_*/
-contract/deployments/*
-!contract/deployments/sepolia/
-contract/deployments/sepolia/.chainId
-contract/deployments/sepolia/solcInputs/
+# contract (foundry)
+contract/out/
+contract/cache_forge/
+contract/dependencies/
+contract/broadcast/*/31337/
+contract/broadcast/**/dry-run/
 
 # frontend (next.js)
 frontend/.next/
@@ -68,6 +63,6 @@ Desktop.ini
 # claude code local state
 .claude/
 
-# smoke test output and local node log (tx hashes go into the README by hand)
-contract/smoke-*.json
-contract/node.log
+
+# smoke test output (tx hashes go into the README by hand)
+backend/smoke-*.json

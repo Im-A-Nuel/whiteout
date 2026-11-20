@@ -229,7 +229,7 @@ Estimated cost of one `move`, from the table (euint64 scalar and, shifts: 34,000
 
 Other entry points: `startRun` about 450,000, `finish` about 165,000.
 
-### Measured (mock FHEVM, `npx hardhat test test/hcu.test.ts`)
+### Measured (forge-fhevm, `forge test -vv --match-contract WhiteoutHcuTest`)
 
 | Entry point | Global HCU | Sequential depth | Estimate above |
 | --- | --- | --- | --- |
@@ -237,7 +237,7 @@ Other entry points: `startRun` about 450,000, `finish` about 165,000.
 | `move` | 1,777,129 | 701,034 | about 1,775,000 |
 | `finish` | 163,032 | 163,000 | about 165,000 |
 
-The `move` and `finish` estimates were within 1 percent. `startRun` came out at about twice the estimate: the implementation also computes the opening Cold and Glint signals at the cabin and rolls six random words, which the hand estimate did not count. Every number is far below the 20,000,000 per-transaction cap and the 5,000,000 depth cap, so up to 2 queued steps per transaction would fit (3 would be 5.3M global, depth is the number to watch). Gas measured on the local node: `startRun` about 971,000, `move` about 948,000. These are mock figures. Sepolia numbers go here after `npx hardhat whiteout:smoke --network sepolia`.
+The `move` and `finish` estimates were within 1 percent. `startRun` came out at about twice the estimate: the implementation also computes the opening Cold and Glint signals at the cabin and rolls six random words, which the hand estimate did not count. Every number is far below the 20,000,000 per-transaction cap and the 5,000,000 depth cap, so up to 2 queued steps per transaction would fit (3 would be 5.3M global, depth is the number to watch). Gas measured earlier on a local FHEVM node: `startRun` about 971,000, `move` about 948,000. These are mock figures. Sepolia numbers go here after `npm run smoke:sepolia` in `backend/`.
 
 Reading this:
 
@@ -258,7 +258,7 @@ Gotchas:
 
 - Load the relayer SDK **only in the browser** (dynamic import with SSR disabled). It uses WASM and breaks server rendering in Next.js.
 - The SDK may need cross-origin isolation headers for threaded WASM. **VERIFY**, and if needed set `Cross-Origin-Opener-Policy` and `Cross-Origin-Embedder-Policy` in `next.config.js`.
-- Package versions move quickly. Pin to what the Hardhat template pins, and check whether a newer unified SDK package has replaced the relayer SDK before upgrading anything.
+- Package versions move quickly. Pin to what the Zama templates pin, and check whether a newer unified SDK package has replaced the relayer SDK before upgrading anything.
 - Cache the decrypt permit for the session to avoid a wallet signature on every step.
 
 ## 8. Deployment
@@ -284,17 +284,19 @@ Gotchas:
 
 ## 10. Open questions for the Day 1 spike
 
-Status after the spike (mock FHEVM, template pins `@fhevm/solidity` 0.11.x and `@fhevm/hardhat-plugin` 0.4.x):
+Status after the spike (forge-fhevm, the template pins `@fhevm/solidity` 0.11.1):
 
 1. **Resolved.** Every scalar overload used in the sketch compiles on the pinned version.
 2. **Measured on the mock, Sepolia pending.** See the table in section 6. Two queued steps stay under the depth cap.
 3. **Resolved.** `abi.decode(cleartexts, (uint64, uint64, uint64, uint8))` works on the padded encoding returned by `publicDecrypt`. Caveat: handles that are trivial encryptions of the same value (for example two zero maps) are identical and cannot be proven together. Real maps are random so this only affects the test harness. The tests use distinct non-zero maps for finalize.
-4. **Resolved.** 120 random maps in the mock: mean 7.51 pits and 7.32 treasure per map, the safe zone and the no-overlap rules held on every map, no stuck bits (`test/randomness.test.ts`).
+4. **Resolved.** 120 random maps in the mock: mean 7.51 pits and 7.32 treasure per map, the safe zone and the no-overlap rules held on every map, no stuck bits (`test/Whiteout.random.t.sol`: mean 7.67 pits and 7.05 treasure on the Foundry run).
 5. **Open.** Cross-origin isolation headers for the relayer SDK. The app builds and runs without them locally. Verify on the Vercel deployment.
-6. **Open.** User-decrypt latency on Sepolia. Run `npx hardhat whiteout:smoke --network sepolia`: it prints encrypt, transaction and decrypt time for every step and writes `smoke-sepolia.json`. If one step takes more than about 8 seconds, redesign around queued input (the UI already queues up to 3 inputs).
+6. **Open.** User-decrypt latency on Sepolia. Run `npm run smoke:sepolia -- 8` in `backend/`: it prints encrypt, transaction and decrypt time for every step and writes `smoke-sepolia.json`. If one step takes more than about 8 seconds, redesign around queued input (the UI already queues up to 3 inputs).
 
 ### Findings worth knowing
 
-- FHEVM tasks outside `hardhat test` need the Hardhat node: `npx hardhat node`, then `--network localhost`. The in-process network has no mock host contracts outside tests.
-- `fhevm.debugger.decryptEuint` reads state with no ACL check and is for tests only. Mock decrypts must run one at a time, parallel reads break the event cursor.
-- The frontend ABI (`frontend/lib/abi.ts`) is checked against the compiled contract by `test/frontendAbi.test.ts`.
+- A forge test function is one transaction, so the host contract's per-transaction HCU total and the sequential depth cap would keep growing across the steps of a test. `test/HcuTest.sol` adds a test-only `HCULimitMeter` with `newTransaction()`, which resets the total and starts a new epoch for handle depths, like a real new transaction. The 20M and 5M limits still apply inside one window.
+- Two steps in one window cost 3,554,258 global HCU with sequential depth 1,128,034, so two queued steps per transaction fit comfortably. Three would be about 5.3M global.
+- `decrypt(...)` in forge-fhevm reads state with no ACL check and is for assertions only. Real access is tested with `userDecrypt` and `signUserDecrypt`.
+- The frontend ABI (`frontend/lib/abi.ts`) is checked against the compiled contract by `frontend/lib/abi.test.ts`, which reads the artifact from `forge build`.
+- The scripted Sepolia run needs the relayer for encrypted inputs and proofs, so it is a Node script (`backend/scripts/smoke-sepolia.ts`), not a forge script. It has not been run against Sepolia yet.

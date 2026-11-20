@@ -12,16 +12,16 @@ Built for the Zama Developer Program Mainnet Season 5, Confidential Gaming. Targ
 
 | Folder | What is in it |
 | --- | --- |
-| [`contract/`](./contract) | Solidity contracts, Hardhat tests (unit, differential against a plaintext model, confidentiality, HCU), deploy script and the `whiteout:smoke` task |
+| [`contract/`](./contract) | Solidity contracts and Foundry tests (unit, differential fuzz against a plaintext model, confidentiality, access control, HCU), deploy script |
 | [`frontend/`](./frontend) | Next.js app: pixel UI, offline practice mode, `/demo` preview of the chain screens, Sepolia mode |
-| [`backend/`](./backend) | Plaintext balance simulator with random, greedy and deduction agents |
+| [`backend/`](./backend) | Plaintext balance simulator, and the scripted full run on Sepolia (`smoke-sepolia.ts`) |
 | [`docs/`](./docs) | Game design, architecture, UI spec and UI kit, test plan, roadmap, demo script |
 
 ## Quick start
 
 ```bash
-# contract tests on the mock FHEVM
-cd contract && npm install && npx hardhat test
+# contract tests with Foundry and forge-fhevm (run in WSL)
+cd contract && forge soldeer install && forge test
 
 # frontend, then open http://localhost:3000/practice
 cd frontend && npm install && npm run dev

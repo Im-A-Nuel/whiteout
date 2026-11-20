@@ -41,7 +41,7 @@ If the state were public, the game would collapse into a lookup table. That is t
 
 ## Tech overview
 
-- **Contracts:** Solidity 0.8.x, `@fhevm/solidity`, Hardhat (`fhevm-hardhat-template`).
+- **Contracts:** Solidity 0.8.27, `@fhevm/solidity` 0.11, Foundry with `forge-fhevm` for tests.
 - **Encrypted types used:** `euint64` bitboards (hazards, treasure, position, path), `euint8` (direction input, treasure count, score), `ebool` (alive, signals).
 - **Zama primitives used:** encrypted inputs with proofs, onchain encrypted RNG (`randEuint64`), ACL (`allowThis` / `allow`), user decryption (relayer SDK), public decryption with `makePubliclyDecryptable` + `checkSignatures`.
 - **Frontend:** Next.js (App Router), TypeScript, ethers v6, `@zama-fhe/relayer-sdk` loaded client-side only.
@@ -64,64 +64,43 @@ Full details: [`ARCHITECTURE.md`](./ARCHITECTURE.md). Rules and balance: [`GAME_
 ## Repository layout
 
 ```
-contract/                 Hardhat project (Zama fhevm-hardhat-template)
+contract/                 Foundry project
   contracts/Whiteout.sol          core game, encrypted state machine
   contracts/WhiteoutLib.sol       bitboard helpers (masks, neighbors)
   contracts/test/WhiteoutHarness.sol  fixed-map override for deterministic tests
-  test/                           unit, differential, confidentiality, HCU, randomness tests
-  test/reference.ts               plaintext reference model of the same rules
-  tasks/whiteout.ts               scripted full run (whiteout:smoke)
-  deploy/deploy.ts                hardhat-deploy script
+  test/*.t.sol                    unit, differential fuzz, confidentiality, access, HCU, randomness tests
+  test/Ref.sol                    plaintext reference model of the same rules
+  script/DeployWhiteout.s.sol     deploy script
 frontend/                 Next.js app (pixel UI, practice mode, demo preview, Sepolia mode)
-backend/                  balance simulator (plaintext agents over the tested engine)
+backend/                  balance simulator and the scripted Sepolia run (scripts/smoke-sepolia.ts)
 docs/                     this documentation and the UI kit
 ```
 
-## Deployed contracts (Sepolia)
+## Run locally
 
-| Contract | Address | Etherscan |
-| --- | --- | --- |
-| Whiteout | `TODO` | `TODO` |
-
-Demo frontend: `TODO` . Demo video: `TODO` . Announcement post on X: `TODO`
-
-## Security notes
-
-This is an unaudited hackathon project. Known limitations are listed in `ARCHITECTURE.md` under "Threat model and limitations". Do not use it with real funds.
-
-## References
-
-- Zama Season 5 announcement: https://www.zama.org/post/zama-developer-program-mainnet-season-5-confidential-gaming
-- Zama protocol docs: https://docs.zama.org/protocol
-- HCU guide: https://docs.zama.org/protocol/solidity-guides/development-guide/hcu
-- FHEVM Hardhat template: https://github.com/zama-ai/fhevm-hardhat-template
-
-## License
-
-`TODO` (MIT recommended). Note that Zama's own libraries are patented, and commercial use of Zama technology requires a license from Zama.## Run locally
+Contract commands run in WSL (`wsl -d Ubuntu-ext`), where Foundry is installed.
 
 ```bash
-# contract: tests on the mock FHEVM (no network needed)
-cd contract && npm install
-npx hardhat test
+# contract: build and test on forge-fhevm, no network needed
+cd contract
+forge soldeer install
+forge test
 
-# contract: rehearse the scripted run on a local node
-npx hardhat node --network hardhat --no-deploy      # terminal 1
-npx hardhat deploy --network localhost               # terminal 2
-npx hardhat whiteout:smoke --network localhost --steps 8
+# contract: deploy to Sepolia (details in contract/README.md)
+cast wallet import deployer --interactive
+export SEPOLIA_RPC_URL=...  ETHERSCAN_API_KEY=...
+forge script script/DeployWhiteout.s.sol --rpc-url sepolia --account deployer --broadcast --verify
 
-# contract: Sepolia (see the template README for variable names)
-npx hardhat vars set MNEMONIC
-npx hardhat vars set INFURA_API_KEY
-npx hardhat deploy --network sepolia
-npx hardhat whiteout:smoke --network sepolia --steps 8
+# scripted full run on Sepolia with the relayer: encrypt, step, decrypt, finish, finalize, with timings
+cd backend && npm install
+SEPOLIA_RPC_URL=... WHITEOUT_ADDRESS=0x... PRIVATE_KEY=0x... npm run smoke:sepolia -- 8
 
 # frontend: set NEXT_PUBLIC_WHITEOUT_ADDRESS in frontend/.env.local after deploying
 cd frontend && npm install && npm run dev
 # /practice plays offline, /demo previews the chain screens with a simulated driver
 
 # balance simulator
-cd backend && npm install && npm run sim
+cd backend && npm run sim
 ```
 
 ## Deployed contracts (Sepolia)
@@ -141,7 +120,9 @@ This is an unaudited hackathon project. Known limitations are listed in `ARCHITE
 - Zama Season 5 announcement: https://www.zama.org/post/zama-developer-program-mainnet-season-5-confidential-gaming
 - Zama protocol docs: https://docs.zama.org/protocol
 - HCU guide: https://docs.zama.org/protocol/solidity-guides/development-guide/hcu
-- FHEVM Hardhat template: https://github.com/zama-ai/fhevm-hardhat-template
+- Foundry guide: https://docs.zama.org/protocol/solidity-guides/development-guide/foundry
+- forge-fhevm: https://github.com/zama-ai/forge-fhevm
+- FHEVM Foundry template: https://github.com/zama-ai/fhevm-foundry-template
 
 ## License
 

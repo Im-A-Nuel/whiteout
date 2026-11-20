@@ -4,13 +4,13 @@ Goal: prove the encrypted engine behaves exactly like a plaintext reference mode
 
 ## 1. Strategy
 
-1. **Plaintext reference model** (`test/reference.ts`): a pure TypeScript implementation of the same rules on `bigint` bitboards. It is the oracle.
+1. **Plaintext reference model** (`test/Ref.sol`): a pure Solidity implementation of the same rules on `uint64` bitboards. It is the oracle.
 2. **Deterministic harness** (`contracts/test/WhiteoutHarness.sol`): overrides `_generateMap()` to load fixed maps with trivial encryption, so tests do not depend on randomness.
 3. **Differential tests**: run the same move sequences through the contract (mock FHEVM) and the reference model, decrypt contract state in the test, and compare step by step.
 4. **Property and confidentiality tests**: ACL, ownership, edge behavior.
 5. **Sepolia smoke test**: a scripted full run on the real network.
 
-Run fast tests with `npx hardhat test` (mock FHEVM). Run the Sepolia smoke test with the template's Sepolia test command.
+Run the fast tests with `forge test` (forge-fhevm, in WSL). The differential test is a fuzz test, 256 runs by default and `forge test --fuzz-runs 2000` for more. Run the Sepolia smoke test with `npm run smoke:sepolia` in `backend/`.
 
 ## 2. Unit tests: game logic
 

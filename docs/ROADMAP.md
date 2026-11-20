@@ -21,7 +21,7 @@ Dokumen kerja untuk lo sendiri, jadi bahasanya santai. Hari ini Senin 16 Novembe
 ## Minggu 1: Senin 16 sampai Minggu 22 Nov (engine)
 
 **Hari 1 sampai 2 (16 sampai 17 Nov): spike**
-- Clone `fhevm-hardhat-template`, pin versi yang dipakai template, jalankan contoh bawaan sampai hijau.
+- Clone `fhevm-foundry-template`, pin versi yang dipakai template, jalankan contoh bawaan sampai hijau (`forge test`).
 - Tulis `Whiteout.sol` minimal: `startRun` dan satu `move`.
 - Jawab pertanyaan terbuka di `ARCHITECTURE.md` bagian 10, terutama nomor 1, 2 dan 4.
 - Cek apakah repo kompetitor di Season 5 sudah ada yang mirip (cari "Zama Season 5" di GitHub dan community.zama.org). Ulangi tiap Senin.
@@ -31,9 +31,9 @@ Dokumen kerja untuk lo sendiri, jadi bahasanya santai. Hari ini Senin 16 Novembe
 - Ukur HCU nyata, catat di `ARCHITECTURE.md`.
 
 **Hari 4 sampai 5 (19 sampai 20 Nov)**
-- `reference.ts` dan harness fixed-map.
+- `Ref.sol` dan harness fixed-map.
 - Tes unit 1 sampai 13 dan tes differential.
-- Deploy ke Sepolia, satu langkah via hardhat task, ukur latensi user decrypt. **Gate kedua.**
+- Deploy ke Sepolia, satu langkah via `backend/scripts/smoke-sepolia.ts`, ukur latensi user decrypt. **Gate kedua.**
 
 **Hari 6 sampai 7 (21 sampai 22 Nov)**
 - `finish`, `finalize`, `prizesInitial`, path packing, tes 14 sampai 20.
