@@ -67,3 +67,7 @@ Desktop.ini
 
 # claude code local state
 .claude/
+
+# smoke test output and local node log (tx hashes go into the README by hand)
+contract/smoke-*.json
+contract/node.log

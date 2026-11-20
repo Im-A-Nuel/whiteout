@@ -69,12 +69,12 @@ Path packing: 24 steps x 2 bits = 48 bits, which fits in one `euint64`. One hand
 | --- | --- | --- |
 | `startRun()` | player | One active run per address. Generates the encrypted map, places the player on the cabin, sets ACL |
 | `move(externalEuint8 dir, bytes proof)` | run owner | Applies one step under encryption, refreshes signals, updates ACL |
-| `finish()` | run owner | Ends the run, computes the score, marks map, path and score publicly decryptable |
+| `finish(runId)` | run owner, or anyone once `MAX_MOVES` is reached | Ends the run, computes the score, marks map, path and score publicly decryptable |
 | `finalize(runId, bytes cleartexts, bytes decryptionProof)` | anyone | Verifies the KMS signatures, stores the revealed result, emits the reveal event |
 | `getRun(runId)` | anyone | Public fields only (player, moves, ended, finalized) |
 | `getHandles(runId)` | anyone | Returns ciphertext handles. Useless without ACL permission |
 
-After `MAX_MOVES`, `move` reverts and `finish()` can be called by anyone for that run, so abandoned runs can still be finalized.
+After `MAX_MOVES`, `move` reverts and `finish(runId)` can be called by anyone for that run, so abandoned runs can still be finalized.
 
 Events (none leaks a direction or a position):
 
@@ -156,6 +156,7 @@ Edge behavior this relies on (**VERIFY** in the mock):
 ### 4.3 Finish (`finish`)
 
 ```solidity
+// implemented as finish(uint256 runId): the id is needed so anyone can finish an abandoned run
 function finish() external {
     Run storage r = _runOf(msg.sender);
     require(!r.ended);
@@ -228,6 +229,16 @@ Estimated cost of one `move`, from the table (euint64 scalar and, shifts: 34,000
 
 Other entry points: `startRun` about 450,000, `finish` about 165,000.
 
+### Measured (mock FHEVM, `npx hardhat test test/hcu.test.ts`)
+
+| Entry point | Global HCU | Sequential depth | Estimate above |
+| --- | --- | --- | --- |
+| `startRun` | 924,191 | 312,063 | about 450,000 |
+| `move` | 1,777,129 | 701,034 | about 1,775,000 |
+| `finish` | 163,032 | 163,000 | about 165,000 |
+
+The `move` and `finish` estimates were within 1 percent. `startRun` came out at about twice the estimate: the implementation also computes the opening Cold and Glint signals at the cabin and rolls six random words, which the hand estimate did not count. Every number is far below the 20,000,000 per-transaction cap and the 5,000,000 depth cap, so up to 2 queued steps per transaction would fit (3 would be 5.3M global, depth is the number to watch). Gas measured on the local node: `startRun` about 971,000, `move` about 948,000. These are mock figures. Sepolia numbers go here after `npx hardhat whiteout:smoke --network sepolia`.
+
 Reading this:
 
 - One step is far below the 20M ceiling, so even 3 queued steps per transaction (about 5.3M) fit the global limit. The depth limit (5M, sequential) is the number to measure, because queued steps are sequentially dependent.
@@ -267,15 +278,23 @@ Gotchas:
 | Replaying someone else's input | Encrypted inputs are bound to the contract and sender by the input proof |
 | Someone else moves your run | `move` requires `msg.sender == run.player` |
 | Timing and gas side channels | Step count and tx timing are public. A bump costs the same as a move because the circuit is branch-free |
-| Abandoned runs | `finish()` is callable by anyone after `MAX_MOVES`, so state does not stay locked |
+| Abandoned runs | `finish(runId)` is callable by anyone after `MAX_MOVES`, so state does not stay locked |
 | Zama infrastructure trust | Inherited from the Zama protocol (KMS threshold, coprocessors). Not specific to this app |
 | Audit | None. Hackathon code |
 
 ## 10. Open questions for the Day 1 spike
 
-1. Do all scalar overloads used in the sketch compile on the pinned version?
-2. Real HCU for `move`, `startRun`, `finish`, measured. Do two queued steps fit the depth cap?
-3. Exact public decryption encoding and `checkSignatures` usage.
-4. Is `randEuint64` uniform over all 64 bits as assumed? Sample a few hundred maps in the mock and check bit density.
-5. Does the SDK need cross-origin isolation headers on Vercel?
-6. Latency of user decryption on Sepolia, measured. If it is above roughly 8 seconds, redesign the UI around queued input.
+Status after the spike (mock FHEVM, template pins `@fhevm/solidity` 0.11.x and `@fhevm/hardhat-plugin` 0.4.x):
+
+1. **Resolved.** Every scalar overload used in the sketch compiles on the pinned version.
+2. **Measured on the mock, Sepolia pending.** See the table in section 6. Two queued steps stay under the depth cap.
+3. **Resolved.** `abi.decode(cleartexts, (uint64, uint64, uint64, uint8))` works on the padded encoding returned by `publicDecrypt`. Caveat: handles that are trivial encryptions of the same value (for example two zero maps) are identical and cannot be proven together. Real maps are random so this only affects the test harness. The tests use distinct non-zero maps for finalize.
+4. **Resolved.** 120 random maps in the mock: mean 7.51 pits and 7.32 treasure per map, the safe zone and the no-overlap rules held on every map, no stuck bits (`test/randomness.test.ts`).
+5. **Open.** Cross-origin isolation headers for the relayer SDK. The app builds and runs without them locally. Verify on the Vercel deployment.
+6. **Open.** User-decrypt latency on Sepolia. Run `npx hardhat whiteout:smoke --network sepolia`: it prints encrypt, transaction and decrypt time for every step and writes `smoke-sepolia.json`. If one step takes more than about 8 seconds, redesign around queued input (the UI already queues up to 3 inputs).
+
+### Findings worth knowing
+
+- FHEVM tasks outside `hardhat test` need the Hardhat node: `npx hardhat node`, then `--network localhost`. The in-process network has no mock host contracts outside tests.
+- `fhevm.debugger.decryptEuint` reads state with no ACL check and is for tests only. Mock decrypts must run one at a time, parallel reads break the event cursor.
+- The frontend ABI (`frontend/lib/abi.ts`) is checked against the compiled contract by `test/frontendAbi.test.ts`.
