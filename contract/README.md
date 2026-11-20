@@ -32,14 +32,18 @@ forge test --fuzz-runs 2000      # longer differential fuzz
 
 ## Deploy to Sepolia
 
+Settings come from `contract/.env` (copy `.env.example`): `SEPOLIA_RPC_URL`, `ETHERSCAN_API_KEY` and the deployer key. Prefer a Foundry keystore (`cast wallet import deployer --interactive` and `--account deployer`) over a key in `.env`.
+
+`forge script` simulates on the local mock and sets the gas limit to its own estimate, which is far too low on the real network (2.47M simulated, 13.2M used). Send the creation with an explicit limit instead:
+
 ```bash
-cast wallet import deployer --interactive      # keystore, the key never touches a file in this repo
-export SEPOLIA_RPC_URL=...                     # your RPC provider
-export ETHERSCAN_API_KEY=...                   # for --verify
-forge script script/DeployWhiteout.s.sol --rpc-url sepolia --account deployer --broadcast --verify
+set -a; . ./.env; set +a
+BC=$(forge inspect contracts/Whiteout.sol:Whiteout bytecode)
+cast send --gas-limit 16000000 --rpc-url "$SEPOLIA_RPC_URL" --private-key "$PRIVATE_KEY" --create "$BC"
+forge verify-contract <address> contracts/Whiteout.sol:Whiteout --chain sepolia --etherscan-api-key "$ETHERSCAN_API_KEY" --watch
 ```
 
-Put the printed address in `frontend/.env.local` as `NEXT_PUBLIC_WHITEOUT_ADDRESS`. The scripted full run with the relayer (encrypt, user decrypt, finalize) lives in `backend/scripts/smoke-sepolia.ts`.
+Put the address in `frontend/.env.local` as `NEXT_PUBLIC_WHITEOUT_ADDRESS` and in `backend/.env` as `WHITEOUT_ADDRESS`. The scripted full run with the relayer lives in `backend/scripts/smoke-sepolia.ts`.
 
 ## Why `HcuTest.sol`
 

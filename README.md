@@ -6,7 +6,7 @@ Whiteout is a fog-of-war survival game on Zama's FHEVM. You walk an 8x8 temple w
 
 Built for the Zama Developer Program Mainnet Season 5, Confidential Gaming. Target network: Sepolia.
 
-> Status: contract, frontend and balance simulator are implemented and tested locally. The contract is not deployed to Sepolia yet, so the addresses and links below are placeholders.
+> Status: contract, frontend and balance simulator are implemented and tested locally. The contract is deployed and verified on Sepolia. A full run on Sepolia (steps, user decrypt, finalize) has not been played yet, so per-step gas and latency on Sepolia are not measured.
 
 ## Repository
 
@@ -37,7 +37,7 @@ On the mock FHEVM: one `move` costs about 1.78M HCU (sequential depth 701k), `st
 
 | Contract | Address |
 | --- | --- |
-| Whiteout | `TODO` |
+| Whiteout | [`0x0a42721223a0eceAE92fAfE07F800A8Adc780185`](https://sepolia.etherscan.io/address/0x0a42721223a0eceAE92fAfE07F800A8Adc780185#code) |
 
 Demo, video and announcement links: `TODO`.
 

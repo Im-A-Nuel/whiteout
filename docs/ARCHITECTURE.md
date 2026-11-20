@@ -295,6 +295,8 @@ Status after the spike (forge-fhevm, the template pins `@fhevm/solidity` 0.11.1)
 
 ### Findings worth knowing
 
+- **Deployed on Sepolia:** `0x0a42721223a0eceAE92fAfE07F800A8Adc780185`, block 12174719, verified on Etherscan. The deploy used **13,231,917 gas**, more than five times the 2,473,971 that `forge script` simulated on the local mock. The first broadcast ran out of gas because forge set the limit to exactly its estimate, and it cost about 0.00036 ETH for nothing. The deploy that worked used `cast send --create --gas-limit 16000000`. Treat every gas figure from the mock, including the roughly 948,000 per step, as unreliable for the real chain until `smoke:sepolia` measures it.
+
 - A forge test function is one transaction, so the host contract's per-transaction HCU total and the sequential depth cap would keep growing across the steps of a test. `test/HcuTest.sol` adds a test-only `HCULimitMeter` with `newTransaction()`, which resets the total and starts a new epoch for handle depths, like a real new transaction. The 20M and 5M limits still apply inside one window.
 - Two steps in one window cost 3,554,258 global HCU with sequential depth 1,128,034, so two queued steps per transaction fit comfortably. Three would be about 5.3M global.
 - `decrypt(...)` in forge-fhevm reads state with no ACL check and is for assertions only. Real access is tested with `userDecrypt` and `signUserDecrypt`.
