@@ -69,3 +69,6 @@ backend/smoke-*.json
 
 # backend env
 backend/.env
+
+# forge broadcast logs (the real deployment is recorded in docs/README.md)
+contract/broadcast/
