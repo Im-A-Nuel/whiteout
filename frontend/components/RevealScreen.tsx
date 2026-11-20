@@ -5,7 +5,7 @@ import type { Reveal } from "@/lib/driver";
 import { analyze, endingLabel } from "@/lib/reveal";
 import { renderCard } from "@/lib/shareCard";
 import { cellLabel } from "@/lib/zones";
-import { Board } from "./Board";
+import { BoardView } from "./BoardView";
 import { ChainView, JourneyRibbon } from "./Hud";
 import { Icon, Panel, Pennants, PipRow, shortHash } from "./Pixel";
 import type { ViewMode } from "./GameScreen";
@@ -195,7 +195,7 @@ export function RevealScreen({
         <div className="col-c">
           <JourneyRibbon cells={a.cells} current={a.finalCell} revealed />
           <Pennants />
-          <Board
+          <BoardView
             trail={trail.length ? trail : trailLive}
             pos={pos}
             dir={idx > 0 ? reveal.dirs[idx - 1] : null}

@@ -92,7 +92,7 @@ export default function RunPage({ params }: { params: Promise<{ id: string }> })
     return (
       <div className="root">
         <div className="snow snowA" style={{ opacity: 0.55 }} />
-        <Header runId={id} finalized view={view} onView={setView} />
+        <Header runId={id} finalized view={view} onView={setView} boardToggle />
         <RevealScreen reveal={load.reveal} runId={id} practice={false} trailLive={[]} view={view} txs={[]} />
       </div>
     );

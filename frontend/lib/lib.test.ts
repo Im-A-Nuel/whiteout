@@ -141,3 +141,37 @@ describe('leaderboard helpers', () => {
     expect(bestOf(rows, null)).toBeNull();
   });
 });
+
+describe("3d world", () => {
+  it("height depends only on the cell and stays in a sane range", async () => {
+    const { heightOf } = await import("./world3d");
+    expect(heightOf.length).toBe(1);
+    for (let c = 0; c < 64; c++) {
+      const h = heightOf(c);
+      expect(h).toBeGreaterThan(0.2);
+      expect(h).toBeLessThan(1.3);
+      expect(heightOf(c)).toBe(h);
+    }
+  });
+
+  it("states follow the fog rules and reveal opens everything", async () => {
+    const { tileState } = await import("./world3d");
+    const visited = new Set([0, 1]);
+    expect(tileState(1, 1, visited, false)).toBe("current");
+    expect(tileState(0, 1, visited, false)).toBe("gate");
+    expect(tileState(9, 1, visited, false)).toBe("neighbor");
+    expect(tileState(2, 1, visited, false)).toBe("neighbor");
+    expect(tileState(10, 1, visited, false)).toBe("unknown");
+    expect(tileState(10, 1, visited, true)).toBe("reveal");
+  });
+
+  it("converts cells to world positions and scales the pixels", async () => {
+    const { worldX, worldZ, pixelScale, trailDots } = await import("./world3d");
+    expect(worldX(0)).toBe(-3.5);
+    expect(worldZ(63)).toBe(3.5);
+    expect(pixelScale(576)).toBe(3);
+    expect(pixelScale(300)).toBe(2);
+    expect(pixelScale(1200)).toBe(4);
+    expect(trailDots([0, 1, 1, 9])).toHaveLength(4);
+  });
+});

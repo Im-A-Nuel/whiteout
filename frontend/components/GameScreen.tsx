@@ -9,7 +9,7 @@ import { useGame } from "@/lib/useGame";
 import { CHAPTERS } from "@/lib/journey";
 import { loadSoundPref, setSound, sfx } from "@/lib/sound";
 import { cellLabel, col, row } from "@/lib/zones";
-import { Board } from "./Board";
+import { BoardView, useBoard3D, useWebGL } from "./BoardView";
 import { ChainView, JourneyLog, JourneyRibbon, LanternPanel, PackPanel, SignalsPanel } from "./Hud";
 import { Icon, Panel, Pennants, Pilgrim, shortAddr } from "./Pixel";
 import { FirstVisitHint, HowToPlayButton } from "./HowToPlay";
@@ -28,6 +28,7 @@ export function Header({
   sound,
   onSound,
   simulated,
+  boardToggle,
 }: {
   runId?: string;
   practice?: boolean;
@@ -39,6 +40,7 @@ export function Header({
   sound?: boolean;
   onSound?: () => void;
   simulated?: boolean;
+  boardToggle?: boolean;
 }) {
   return (
     <header className="row hdr">
@@ -85,6 +87,7 @@ export function Header({
           </span>
         )}
         {address && <span className="hash">{shortAddr(address)}</span>}
+        {boardToggle && <BoardToggle />}
         <HowToPlayButton />
         {onSound && (
           <button type="button" className="btn sm alt sound-btn" aria-pressed={!!sound} aria-label={sound ? "Sound on" : "Sound off"} onClick={onSound}>
@@ -94,6 +97,25 @@ export function Header({
         <Link href="/leaderboard" className="btn sm alt">Leaderboard</Link>
       </div>
     </header>
+  );
+}
+
+/** Switches the board between the flat pixel view and the 3D temple. */
+function BoardToggle() {
+  const [on, set] = useBoard3D();
+  const webgl = useWebGL();
+  const active = on && webgl;
+  return (
+    <button
+      type="button"
+      className={`btn sm ${active ? "on" : "alt"}`}
+      aria-pressed={active}
+      disabled={!webgl}
+      title={webgl ? "Show the board as a 3D temple" : "This browser cannot draw WebGL, so the 3D view is unavailable"}
+      onClick={() => set(!on)}
+    >
+      3D view
+    </button>
   );
 }
 
@@ -128,6 +150,7 @@ export function GameScreen({ driver, address, resume }: { driver: Driver; addres
   const [card, setCard] = useState<{ ch: number; step: number } | null>(null);
   const prev = useRef({ moves: 0, relics: 0, cold: false, alive: true, phase: "starting" as string });
   const [sheet, setSheet] = useState(false);
+  const [board3d] = useBoard3D();
   const boardRef = useRef<HTMLDivElement>(null);
   const scrolled = useRef(false);
   const swipe = useRef<{ x: number; y: number; done: boolean } | null>(null);
@@ -216,7 +239,7 @@ export function GameScreen({ driver, address, resume }: { driver: Driver; addres
     return (
       <div className="root" style={{ ["--s" as string]: "4px" }}>
         <div className="snow snowA" style={{ opacity: 0.55 }} />
-        <Header runId={s.runId} practice={practice} finalized={!practice} address={address} view={view} onView={setView} sound={sound} onSound={toggleSound} simulated={simulated} />
+        <Header runId={s.runId} practice={practice} finalized={!practice} address={address} view={view} onView={setView} sound={sound} onSound={toggleSound} simulated={simulated} boardToggle />
         <RevealScreen
           reveal={s.reveal}
           runId={s.runId}
@@ -237,7 +260,7 @@ export function GameScreen({ driver, address, resume }: { driver: Driver; addres
     <div className="root">
       <div className="snow snowA" />
       <div className="snow snowB" />
-      <Header runId={s.runId || undefined} practice={practice} address={address} view={view} onView={setView} sound={sound} onSound={toggleSound} simulated={simulated} />
+      <Header runId={s.runId || undefined} practice={practice} address={address} view={view} onView={setView} sound={sound} onSound={toggleSound} simulated={simulated} boardToggle />
       <div className="sr-only" aria-live="polite">{s.announce}</div>
       <FirstVisitHint />
 
@@ -275,7 +298,7 @@ export function GameScreen({ driver, address, resume }: { driver: Driver; addres
             <div
               ref={boardRef}
               className="boardwrap"
-              onPointerDown={(e) => { if (e.pointerType === "touch") swipe.current = { x: e.clientX, y: e.clientY, done: false }; }}
+              onPointerDown={(e) => { if (e.pointerType === "touch" && !board3d) swipe.current = { x: e.clientX, y: e.clientY, done: false }; }}
               onPointerUp={(e) => {
                 const st = swipe.current;
                 swipe.current = null;
@@ -294,7 +317,7 @@ export function GameScreen({ driver, address, resume }: { driver: Driver; addres
                 <div className="n">{CHAPTERS[card.ch].name}</div>
               </div>
             )}
-            <Board
+            <BoardView
               burst={s.pickup}
               fallen={dead}
               trail={s.cells}
@@ -370,7 +393,7 @@ export function GameScreen({ driver, address, resume }: { driver: Driver; addres
             <div className="sub" role="status" aria-live="polite" style={{ marginTop: 10, minHeight: 20, color: "var(--amber)" }}>
               {s.decrypting ? (s.queued ? `Decrypting... ${s.queued} ${s.queued === 1 ? "step" : "steps"} queued.` : "Decrypting...") : ""}
             </div>
-            <div className="sub" style={{ marginTop: 4 }}>Arrow keys or WASD to move. Swipe the board on a phone. Enter to finish.</div>
+            <div className="sub" style={{ marginTop: 4 }}>Arrow keys or WASD to move. {board3d ? "Drag the 3D view to turn the camera." : "Swipe the board on a phone."} Enter to finish.</div>
             <div className="row marks-legend" role="group" aria-label="Notes legend">
               <span className="sub">Click a dark tile to cycle a private note:</span>
               <span className="row" style={{ alignItems: "center", gap: 6 }}>
