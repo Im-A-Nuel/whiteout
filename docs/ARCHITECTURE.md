@@ -291,7 +291,22 @@ Status after the spike (forge-fhevm, the template pins `@fhevm/solidity` 0.11.1)
 3. **Resolved.** `abi.decode(cleartexts, (uint64, uint64, uint64, uint8))` works on the padded encoding returned by `publicDecrypt`. Caveat: handles that are trivial encryptions of the same value (for example two zero maps) are identical and cannot be proven together. Real maps are random so this only affects the test harness. The tests use distinct non-zero maps for finalize.
 4. **Resolved.** 120 random maps in the mock: mean 7.51 pits and 7.32 treasure per map, the safe zone and the no-overlap rules held on every map, no stuck bits (`test/Whiteout.random.t.sol`: mean 7.67 pits and 7.05 treasure on the Foundry run).
 5. **Open.** Cross-origin isolation headers for the relayer SDK. The app builds and runs without them locally. Verify on the Vercel deployment.
-6. **Open.** User-decrypt latency on Sepolia. Run `npm run smoke:sepolia -- 8` in `backend/`: it prints encrypt, transaction and decrypt time for every step and writes `smoke-sepolia.json`. If one step takes more than about 8 seconds, redesign around queued input (the UI already queues up to 3 inputs).
+6. **Measured, answer is no.** About 26 s per step end to end, 5 s of it user decrypt, far above the 8 s guideline. Do not wait for each step in sequence. Mitigations, in order of value: pre-encrypt the four directions for the next step while the current transaction confirms, keep the queue of inputs, and send two steps per transaction (2 steps cost 3.55M HCU, depth 1.13M, which fits). Still open: the same measurement from a browser. (Original question: User-decrypt latency on Sepolia. Run `npm run smoke:sepolia -- 8` in `backend/`: it prints encrypt, transaction and decrypt time for every step and writes `smoke-sepolia.json`. If one step takes more than about 8 seconds, redesign around queued input (the UI already queues up to 3 inputs).)
+
+### Measured on Sepolia (run 1, 4 steps, Node script `backend/scripts/smoke-sepolia.ts`)
+
+| Entry point | Gas used | Mock estimate |
+| --- | --- | --- |
+| `startRun` | 3,321,013 | about 971,000 |
+| `move` | about 2,395,760 | about 948,000 |
+| `finish` | 849,982 | not measured |
+| `finalize` | 490,824 | not measured |
+
+Real gas is about 2.5 to 3.4 times the mock figures, so only the Sepolia numbers count. A full 24 step run is about 62M gas in total. Gas price on the day was a few hundred thousand times below mainnet levels, so the run cost almost nothing; the price varied between 17 wei and about 0.14 gwei over one afternoon.
+
+Latency per step, averaged over 4 steps: encrypt about 10.6 s (the relayer proof, almost all of it), transaction confirmation about 8 to 25 s (one block is about 12 s), user decrypt about 5 s. A step takes about 26 s end to end, worst 42 s. Public decrypt for finalize took about 5 s. This is a Node run from a laptop. The browser has not been measured.
+
+Run 1: start [`0xcbc69ecc…8a7aaa`](https://sepolia.etherscan.io/tx/0xcbc69ecc17c3db0e4313f58b1265aaab592c5d17cb7617bb4722d064208a7aaa), step 1 [`0x3820de47…c0efc5`](https://sepolia.etherscan.io/tx/0x3820de47d9e7a0ec6e14fa5cbab68c22b969602b4acc501e04aa59301ec0efc5), step 4 [`0x4f112b4e…afdd5a`](https://sepolia.etherscan.io/tx/0x4f112b4e8b105fb3e92b40c63f477e814ca23df4acf41bf5143e919992afdd5a), finish [`0x00806a33…955815`](https://sepolia.etherscan.io/tx/0x00806a3322261a5c393840c51182931c968c2041861137f0585404ef50955815), finalize [`0xe77d4969…eb797e`](https://sepolia.etherscan.io/tx/0xe77d4969e9dad41922f3684970f5e7817b371333a9731397dbbccb1ec3eb797e). Revealed pits `0x8012005980402008`, relics `0x0040000000080800`, score 0 (the run walked east and west only).
 
 ### Findings worth knowing
 

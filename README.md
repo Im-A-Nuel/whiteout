@@ -6,7 +6,7 @@ Whiteout is a fog-of-war survival game on Zama's FHEVM. You walk an 8x8 temple w
 
 Built for the Zama Developer Program Mainnet Season 5, Confidential Gaming. Target network: Sepolia.
 
-> Status: contract, frontend and balance simulator are implemented and tested locally. The contract is deployed and verified on Sepolia. A full run on Sepolia (steps, user decrypt, finalize) has not been played yet, so per-step gas and latency on Sepolia are not measured.
+> Status: contract, frontend and balance simulator are implemented and tested locally. The contract is deployed and verified on Sepolia, and a scripted run (start, 4 steps, finish, finalize with proof) has completed there. A step takes about 26 s end to end, which the UI has to hide. See `docs/ARCHITECTURE.md`. The browser flow with a real wallet has not been tried yet.
 
 ## Repository
 
@@ -31,7 +31,7 @@ Deploying to Sepolia and the scripted full run are described in [`docs/README.md
 
 ## What is measured so far
 
-On the mock FHEVM: one `move` costs about 1.78M HCU (sequential depth 701k), `startRun` about 924k and `finish` about 163k, all far under the 20M per-transaction cap. Measured gas on a local node is about 948k per step. Sepolia numbers and user-decrypt latency are not measured yet.
+HCU (forge-fhevm): one `move` costs about 1.78M (sequential depth 701k), `startRun` about 924k and `finish` about 163k, all far under the 20M per-transaction cap. Gas on Sepolia: `startRun` 3.32M, `move` about 2.40M, `finish` 0.85M, `finalize` 0.49M. Latency on Sepolia from a Node script: about 26 s per step (encrypt 10.6 s, confirmation 8 to 25 s, user decrypt 5 s).
 
 ## Deployed contracts (Sepolia)
 
