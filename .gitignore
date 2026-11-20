@@ -66,3 +66,6 @@ Desktop.ini
 
 # smoke test output (tx hashes go into the README by hand)
 backend/smoke-*.json
+
+# backend env
+backend/.env
